@@ -1,5 +1,5 @@
 from google.appengine.api import memcache, urlfetch
-import logging, json, zipfile, StringIO
+import json, logging, urllib, zipfile, StringIO
 
 class Renderer:
     def renderPage(self, destination, rendered = [], root = None):
@@ -11,7 +11,7 @@ class Renderer:
         if destination in rendered:
             return
         rendered.append(destination)
-        logging.info("Rendering for root "+str(root)+" destination "+destination+" rendered "+str(rendered))
+        #logging.info("Rendering for root "+str(root)+" destination "+destination+" rendered "+str(rendered))
 
         raw = memcache.get(destination)
         if raw is None:
@@ -33,7 +33,8 @@ class Renderer:
         body = self.renderSection(top)
         rendered.append(name)
         html = "<html><head><title>%s</title></head><body>%s</body></html>" % (name,body)
-        pages = [{ "title" : name , "uri" : top["url"], "contents" : html}]
+        images = top["images"] if "images" in top else []
+        pages = [{ "title" : name , "uri" : top["url"], "contents" : html, "images" : images}]
 
         if "subpages" in top:
             if not root in top["subpages"]:
@@ -67,6 +68,12 @@ class Zipper:
         file.writestr("OEBPS/toc.ncx", self.getTOCFor(pages))
         for page in pages:
             file.writestr(self.getFullPathFor(page), page["contents"].encode("utf8"))
+            for image in page["images"]:
+                file.writestr("OEBPS/"+self.getImagePageFileNameFor(image), self.getImagePageFor(image))
+                logging.info("Wrote %s for %s" % (self.getImagePageFor(image), self.getImagePageFileNameFor(image)) )
+                logging.info("Fetching %s for %s" % (image["url"], self.getImagePageFileNameFor(image)) )
+                response = urlfetch.fetch(image["url"])
+                file.writestr("OEBPS/"+self.getImageFileNameFor(image), response.content)
         file.close()
         logging.info("Zipped "+str(file.namelist()))
         return [file, stream]
@@ -78,7 +85,28 @@ class Zipper:
         return self.getTitleFor(page)+".xhtml"
     
     def getTitleFor(self, page):
-        return page["title"].encode("utf8").replace("/","_").replace(" ","_")
+        title = page["title"].replace("/","_").replace(" ","_")
+        return unicode(title)
+
+    def getImageFileNameFor(self, image):
+        filename = image["url"]
+        slash = filename.rfind("/")
+        filename = filename if slash<0 else filename[1+slash:]
+        return filename
+    
+    def getImagePageFileNameFor(self, image):
+        filename = image["name"]
+        colon = filename.find(":")
+        filename = filename if colon<0 else filename[1+colon:]
+        filename = filename.strip().replace(" ","_")
+        dot = filename.rfind(".")
+        filename = filename+".xhtml" if dot<0 else filename[:dot]+".xhtml"
+        return filename
+    
+    def getImagePageFor(self, image):
+        tag = "<img src='%s' />" % self.getImageFileNameFor(image)
+        html = "<html><head><title>%s</title></head><body>%s<HR/>%s</body></html>" % (image["name"], tag, image["name"])
+        return unicode(html).encode("utf8")
 
     def getContainerXML(self):
         xml = '<?xml version="1.0" encoding="UTF-8" ?>'
@@ -101,11 +129,14 @@ class Zipper:
  
         xml+= '<manifest>'
         for page in pages:
-            xml+= '<item id="%s" href="%s" media-type="application/xhtml+xml"/>' % (self.getTitleFor(page), self.getPathFor(page))
+            xml+= '<item id="%s" href="%s" media-type="application/xhtml+xml"/>\n' % (self.getTitleFor(page), self.getPathFor(page))
 #<item id="stylesheet" href="style.css" media-type="text/css"/>
-#<item id="ch1-pic" href="ch1-pic.png" media-type="image/png"/>
 #<item id="myfont" href="css/myfont.otf" media-type="application/x-font-opentype"/>
-        xml+= '<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>'
+            for image in page["images"]:
+                filename = self.getImagePageFileNameFor(image)
+                mimetype = 'image/png' if filename.find('.png')>0 else 'image/jpeg'
+                xml+= '<item id="%s" href="%s" media-type="%s"/>' % (filename, filename, mimetype)
+        xml+= '<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>\n'
         xml+= '</manifest>'
         
         xml+= '<spine toc="ncx">'
@@ -114,7 +145,7 @@ class Zipper:
         xml+= '</spine>'
  
         xml+= '</package>'
-        return xml
+        return unicode(xml).encode("utf8")
 
     def getTOCFor(self, pages):
         book_uri = pages[0]["uri"]
@@ -127,19 +158,26 @@ class Zipper:
         xml+= '<meta name="dtb:depth" content="1"/>'
         xml+= '<meta name="dtb:totalPageCount" content="0"/>'
         xml+= '<meta name="dtb:maxPageNumber" content="0"/>'
-        xml+= '</head>'
+        xml+= '</head>\n'
         xml+= '<docTitle><text>%s</text></docTitle>' % book_title
-        xml+= '<docAuthor><text>WikiSherpa</text></docAuthor>'
-        xml+= '<navMap>'
+        xml+= '<docAuthor><text>WikiSherpa</text></docAuthor>\n'
+        xml+= '<navMap>\n'
         
         i = 1
         for page in pages:
             xml+= '<navPoint class="chapter" id="%s" playOrder="%s">' % (self.getTitleFor(page), str(i))
             xml+= '<navLabel><text>%s</text></navLabel>' % page["title"]
             xml+= '<content src="%s"/>' % self.getPathFor(page)
-            xml+= '</navPoint>'
+            xml+= '</navPoint>\n'
             i+=1
+            for image in page["images"]:
+                filename = self.getImagePageFileNameFor(image)
+                xml+= '<navPoint class="chapter" id="%s" playOrder="%s">' % (filename, str(i))
+                xml+= '<navLabel><text>%s</text></navLabel>' % image["name"]
+                xml+= '<content src="%s"/>' % filename
+                xml+= '</navPoint>\n'
+                i+=1
 
-        xml+= '</navMap>'
+        xml+= '\n</navMap>'
         xml+= '</ncx>'
-        return xml
+        return unicode(xml).encode("utf8")

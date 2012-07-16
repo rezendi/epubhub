@@ -1,6 +1,4 @@
-
-Brooklyn ebook.
-Render listings.
+Add (some) images.
 Top-level sections as chapters.
-Render images.
-Paris / UTF8.
+Render listings.
+Inner links.
