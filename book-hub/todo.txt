@@ -1,4 +1,9 @@
-Add (some) images.
 Top-level sections as chapters.
+Full-size images.
 Render listings.
-Inner links.
+Filter out scanty/empty links (eg Levallois) and empty sections.
+Inner links, clean hashes.
+Filter out other-language links.
+
+API:
+ Other-language links in new section.

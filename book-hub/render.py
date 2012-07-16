@@ -16,9 +16,9 @@ class Renderer:
         raw = memcache.get(destination)
         if raw is None:
             url = 'http://wiki-sherpa.appspot.com/api/1/page'+destination+'?apiKey='+apiKey
+            logging.info("Fetching "+url)
             response = urlfetch.fetch(url)
             raw = unicode(response.content)
-
         try:
             top = json.loads(raw)
         except Exception, reason:
@@ -32,7 +32,9 @@ class Renderer:
             root = "/"+top["locale"]+"/"+top["name"].replace(" ","_")
         body = self.renderSection(top)
         rendered.append(name)
-        html = "<html><head><title>%s</title></head><body>%s</body></html>" % (name,body)
+        html = '<?xml version="1.0" encoding="utf-8"?>\n'
+        html+= '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">\n'
+        html+= "<html><head><title>%s</title></head><body>%s</body></html>" % (name,body)
         images = top["images"] if "images" in top else []
         pages = [{ "title" : name , "uri" : top["url"], "contents" : html, "images" : images}]
 
@@ -66,23 +68,25 @@ class Zipper:
         file.writestr("META-INF/container.xml", self.getContainerXML())
         file.writestr("OEBPS/content.opf", self.getContentOBFFor(pages))
         file.writestr("OEBPS/toc.ncx", self.getTOCFor(pages))
-        for page in pages:
-            file.writestr(self.getFullPathFor(page), page["contents"].encode("utf8"))
-            for image in page["images"]:
-                file.writestr("OEBPS/"+self.getImagePageFileNameFor(image), self.getImagePageFor(image))
-                logging.info("Wrote %s for %s" % (self.getImagePageFor(image), self.getImagePageFileNameFor(image)) )
-                logging.info("Fetching %s for %s" % (image["url"], self.getImagePageFileNameFor(image)) )
-                response = urlfetch.fetch(image["url"])
-                file.writestr("OEBPS/"+self.getImageFileNameFor(image), response.content)
+        for idx, page in enumerate(pages):
+            file.writestr(self.getFullPathFor(page,idx), page["contents"].encode("utf8"))
+            for jdx, image in enumerate(page["images"]):
+                file.writestr("OEBPS/Text/"+self.getImagePageFileNameFor(image,idx,jdx), self.getImagePageFor(image))
+                raw = memcache.get(image["url"])
+                if raw is None:
+                    logging.info("Fetching "+image["url"])
+                    response = urlfetch.fetch(image["url"])
+                    raw = response.content
+                file.writestr("OEBPS/Images/"+self.getImageFileNameFor(image), raw)
         file.close()
         logging.info("Zipped "+str(file.namelist()))
         return [file, stream]
 
-    def getFullPathFor(self, page):
-        return "OEBPS/"+self.getPathFor(page)
+    def getFullPathFor(self, page, idx):
+        return "OEBPS/"+self.getPathFor(page, idx)
 
-    def getPathFor(self, page):
-        return self.getTitleFor(page)+".xhtml"
+    def getPathFor(self, page, idx):
+        return "Text/"+str(1000+idx)+"-0-"+self.getTitleFor(page)+".xhtml"
     
     def getTitleFor(self, page):
         title = page["title"].replace("/","_").replace(" ","_")
@@ -94,18 +98,24 @@ class Zipper:
         filename = filename if slash<0 else filename[1+slash:]
         return filename
     
-    def getImagePageFileNameFor(self, image):
+    def getImageNameFor(self, image):
         filename = image["name"]
         colon = filename.find(":")
         filename = filename if colon<0 else filename[1+colon:]
         filename = filename.strip().replace(" ","_")
         dot = filename.rfind(".")
-        filename = filename+".xhtml" if dot<0 else filename[:dot]+".xhtml"
+        filename = filename if dot<0 else filename[:dot]
         return filename
+
+    def getImagePageFileNameFor(self, image, idx, jdx):
+        filename = self.getImageNameFor(image)
+        return str(1000+idx)+"-"+str(1000+jdx)+"-"+filename+".xhtml"
     
     def getImagePageFor(self, image):
-        tag = "<img src='%s' />" % self.getImageFileNameFor(image)
-        html = "<html><head><title>%s</title></head><body>%s<HR/>%s</body></html>" % (image["name"], tag, image["name"])
+        tag = "<img src='../Images/"+self.getImageFileNameFor(image)+"' />"
+        html = '<?xml version="1.0" encoding="utf-8"?>\n'
+        html+= '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">'
+        html+= "<html><head><title>%s</title></head><body>\n%s\n<HR/>%s\n</body></html>" % (image["name"], tag, image["name"])
         return unicode(html).encode("utf8")
 
     def getContainerXML(self):
@@ -118,31 +128,36 @@ class Zipper:
     def getContentOBFFor(self, pages):
         book_uri = pages[0]["uri"]
         book_title = pages[0]["title"]
-        xml = '<?xml version="1.0"?>'
-        xml+= '<package version="2.0" xmlns="http://www.idpf.org/2007/opf" unique-identifier="%s">' % book_uri
-        xml+= '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">'
-        xml+= '<dc:title>%s</dc:title>' % book_title
-        xml+= '<dc:language>en</dc:language>'
-        xml+= '<dc:identifier id="BookId" opf:scheme="URI">%s</dc:identifier>' % book_uri
-        xml+= '<dc:creator opf:file-as="WikiSherpa" opf:role="aut">WikiSherpa</dc:creator>'
-        xml+= '</metadata>'
+        xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        xml+= '<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="2.0">\n'
+        xml+= '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">\n'
+        xml+= '<dc:title>%s</dc:title>\n' % book_title
+        xml+= '<dc:language>en</dc:language>\n'
+        xml+= '<dc:identifier id="BookId" opf:scheme="URI">%s</dc:identifier>\n' % book_uri
+        xml+= '<dc:creator opf:file-as="WikiSherpa" opf:role="aut">WikiSherpa</dc:creator>\n'
+        xml+= '<dc:publisher>Jedisaber.com</dc:publisher>'
+        xml+= '</metadata>\n'
  
-        xml+= '<manifest>'
-        for page in pages:
-            xml+= '<item id="%s" href="%s" media-type="application/xhtml+xml"/>\n' % (self.getTitleFor(page), self.getPathFor(page))
+        xml+= '<manifest>\n'
+        xml+= '<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>\n'
+        for idx, page in enumerate(pages):
+            xml+= '<item id="%s" href="%s" media-type="application/xhtml+xml"/>\n' % (self.getTitleFor(page), self.getPathFor(page,idx))
 #<item id="stylesheet" href="style.css" media-type="text/css"/>
 #<item id="myfont" href="css/myfont.otf" media-type="application/x-font-opentype"/>
-            for image in page["images"]:
-                filename = self.getImagePageFileNameFor(image)
+            for jdx, image in enumerate(page["images"]):
+                filename = self.getImagePageFileNameFor(image,idx,jdx)
+                xml+= '<item id="page_%s" href="%s" media-type="application/xhtml+xml"/>\n' % (self.getImageNameFor(image), "Text/"+filename)
+                filename = self.getImageFileNameFor(image)
                 mimetype = 'image/png' if filename.find('.png')>0 else 'image/jpeg'
-                xml+= '<item id="%s" href="%s" media-type="%s"/>' % (filename, filename, mimetype)
-        xml+= '<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>\n'
-        xml+= '</manifest>'
+                xml+= '<item id="image_%s" href="%s" media-type="%s"/>\n' % (self.getImageNameFor(image), "Images/"+filename, mimetype)
+        xml+= '</manifest>\n'
         
-        xml+= '<spine toc="ncx">'
-        for page in pages:
+        xml+= '<spine toc="ncx">\n'
+        for idx, page in enumerate(pages):
             xml+= '<itemref idref="%s" />' % self.getTitleFor(page)
-        xml+= '</spine>'
+            for jdx, image in enumerate(page["images"]):
+                xml+= '<itemref idref="page_%s" />\n' % self.getImageNameFor(image)
+        xml+= '</spine>\n'
  
         xml+= '</package>'
         return unicode(xml).encode("utf8")
@@ -164,17 +179,17 @@ class Zipper:
         xml+= '<navMap>\n'
         
         i = 1
-        for page in pages:
+        for idx, page in enumerate(pages):
             xml+= '<navPoint class="chapter" id="%s" playOrder="%s">' % (self.getTitleFor(page), str(i))
             xml+= '<navLabel><text>%s</text></navLabel>' % page["title"]
-            xml+= '<content src="%s"/>' % self.getPathFor(page)
+            xml+= '<content src="%s"/>' % self.getPathFor(page, idx)
             xml+= '</navPoint>\n'
             i+=1
-            for image in page["images"]:
-                filename = self.getImagePageFileNameFor(image)
+            for jdx, image in enumerate(page["images"]):
+                filename = self.getImagePageFileNameFor(image,idx,jdx)
                 xml+= '<navPoint class="chapter" id="%s" playOrder="%s">' % (filename, str(i))
                 xml+= '<navLabel><text>%s</text></navLabel>' % image["name"]
-                xml+= '<content src="%s"/>' % filename
+                xml+= '<content src="Text/'+filename+'"/>'
                 xml+= '</navPoint>\n'
                 i+=1
 
