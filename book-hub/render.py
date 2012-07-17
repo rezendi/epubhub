@@ -122,6 +122,8 @@ class Renderer:
         filename = image["url"] # image["secondUrl"] if "secondUrl" in image else image["url"]
         slash = filename.rfind("/")
         filename = filename if slash<0 else filename[1+slash:]
+        filename = filename.strip().replace(" ","_").replace("'","").replace("%27","").replace("%28","").replace("%2C","")
+        filename = filename.replace("!","").replace(",","")
         return filename
     
 class Zipper:
@@ -160,13 +162,16 @@ class Zipper:
         filename = image["url"]
         slash = filename.rfind("/")
         filename = filename if slash<0 else filename[1+slash:]
+        filename = filename.strip().replace(" ","_").replace("'","").replace("%27","").replace("%28","").replace("%2C","")
+        filename = filename.replace("!","").replace(",","")
         return filename
     
     def getImageNameFor(self, image):
         filename = image["name"]
         colon = filename.find(":")
         filename = filename if colon<0 else filename[1+colon:]
-        filename = filename.strip().replace(" ","_")
+        filename = filename.strip().replace(" ","_").replace("'","").replace("%27","").replace("%28","").replace("%2C","")
+        filename = filename.replace("!","").replace(",","")
         dot = filename.rfind(".")
         filename = filename if dot<0 else filename[:dot]
         return filename
@@ -193,14 +198,18 @@ class Zipper:
  
         xml+= '<manifest>\n'
         xml+= '<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>\n'
+        ids = []
         for page in pages:
             xml+= '<item id="%s" href="%s" media-type="application/xhtml+xml"/>\n' % (self.getTitleFor(page), self.getPathFor(page))
 #<item id="stylesheet" href="style.css" media-type="text/css"/>
 #<item id="myfont" href="css/myfont.otf" media-type="application/x-font-opentype"/>
             for image in page["images"]:
+                if self.getImageNameFor(image) in ids:
+                    continue
                 filename = self.getImageFileNameFor(image)
                 mimetype = 'image/png' if filename.find('.png')>0 else 'image/jpeg'
                 xml+= '<item id="image_%s" href="%s" media-type="%s"/>\n' % (self.getImageNameFor(image), "Images/"+filename, mimetype)
+                ids.append(self.getImageNameFor(image))
         xml+= '</manifest>\n'
         
         xml+= '<spine toc="ncx">\n'

@@ -1,6 +1,8 @@
 Fix:
  Render listings.
  Ile-de-France, Paris wikipedia tables.
+ Validate.
+ Check against Kindle.
  Full-size maps?
 
 API:
