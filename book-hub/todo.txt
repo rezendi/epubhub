@@ -1,11 +1,9 @@
 Fix:
  Render listings.
- Images in sections.
- Add wikipedia.
  Ile-de-France, Paris wikipedia tables.
+ Full-size maps?
 
 API:
- Wikipedia.
  Sequence correctly (v2.)
 
 Then:

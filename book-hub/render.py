@@ -33,11 +33,27 @@ class Renderer:
         if root is None:
             root = "/"+top["locale"]+"/"+top["name"].replace(" ","_")
         
+        wikipedia = None
+        if "sections" in top:
+            sections = top["sections"]
+            last = sections[len(sections)-1]
+            if "name" in last and last["name"]=="Wikipedia":
+                wikipedia = sections.pop()
+
         html = '<?xml version="1.0" encoding="utf-8"?>\n'
         html+= '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">\n'
+
+        if wikipedia is not None:
+            body = self.renderSection(wikipedia)
+            wikip_images = wikipedia["images"] if "images" in wikipedia else []
+            self.collectImages(wikipedia, wikip_images)
+            wikip_html = html+"<html><head><title>%s</title></head><body>%s</body></html>" % (name, body)
+            wikip_page = { "title" : "Wikipedia" , "uri" : top["url"]+"/Wikipedia", "contents" : wikip_html, "images" : wikip_images}
+            
         if len(raw)<65536 or not "sections" in top:
             body = self.renderSection(top)
             html+= "<html><head><title>%s</title></head><body>%s</body></html>" % (name, body)
+            self.collectImages(top, images)
             pages = [] if len("body")>256 else [{ "title" : name , "uri" : top["url"], "contents" : html, "images" : images}]
         else:
             body = self.renderSection(top, cascade=False)
@@ -45,6 +61,7 @@ class Renderer:
             pages = [{ "title" : name , "uri" : top["url"], "contents" : page_html, "images" : images}]
             for section in top["sections"]:
                 images = section["images"] if "images" in section else []
+                self.collectImages(section, images)
                 name = section["name"]
                 body = self.renderSection(section)
                 if len(body)==0:
@@ -52,6 +69,9 @@ class Renderer:
                 page_html = html+"<html><head><title>%s</title></head><body>%s</body></html>" % (name, body)
                 section_page = { "title" : name , "uri" : top["url"]+"/"+name, "contents" : page_html, "images" : images}
                 pages.append(section_page)
+        
+        if wikipedia is not None:
+            pages.append(wikip_page)
 
         if "subpages" in top:
             if not root in top["subpages"]:
@@ -68,7 +88,8 @@ class Renderer:
         if "images" in section:
             keep = True
             for image in section["images"]:
-                html+= "<div class='image' style='width:100%;'><HR/><img src='../Images/"+self.getImageFileNameFor(image)+"' /></div>"
+                html+= "<div class='image' style='width:100%;'><center><img src='../Images/"+self.getImageFileNameFor(image)+"' />";
+                html+= "<br/><i>"+self.getDisplayNameFor(image)+"</i></center></div>"
         if "text" in section and len(re.sub('<[^<]+?>', '', section["text"]))>16:
             keep = True
             html+=section["text"]
@@ -84,6 +105,18 @@ class Renderer:
             return ""
         html+="<HR/>"
         return html
+    
+    def getDisplayNameFor(self, image):
+        return image["name"].replace("Image: ","")
+
+    def collectImages(self, section, images):
+        if "images" in section:
+            for image in section["images"]:
+                if not image in images:
+                    images.append(image)
+        if "sections" in section:
+            for subsection in section["sections"]:
+                self.collectImages(subsection, images)
 
     def getImageFileNameFor(self, image):
         filename = image["url"] # image["secondUrl"] if "secondUrl" in image else image["url"]
