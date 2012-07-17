@@ -18,6 +18,8 @@ class GuideTask(webapp2.RequestHandler):
     def post(self):
         renderer = render.Renderer()
         pages = renderer.renderPage(self.request.get('destination'))
+        logging.info("Rendered pages "+str([page["title"] for page in pages]))
+        pages = [page for page in pages if len(page["contents"])>256]
 
         zipper = render.Zipper()
         [zipfile, zipstream] = zipper.zipPages(pages)

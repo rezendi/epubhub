@@ -1,9 +1,15 @@
-Top-level sections as chapters.
-Full-size images.
-Render listings.
-Filter out scanty/empty links (eg Levallois) and empty sections.
-Inner links, clean hashes.
-Filter out other-language links.
+Fix:
+ Render listings.
+ Images in sections.
+ Add wikipedia.
+ Ile-de-France, Paris wikipedia tables.
 
 API:
- Other-language links in new section.
+ Wikipedia.
+ Sequence correctly (v2.)
+
+Then:
+ Thailand.
+
+Eventually:
+ Inner links.
