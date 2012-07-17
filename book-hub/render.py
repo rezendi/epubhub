@@ -133,7 +133,8 @@ class Zipper:
         file.writestr("mimetype", "application/epub+zip")
         file.writestr("META-INF/container.xml", self.getContainerXML())
         file.writestr("OEBPS/content.opf", self.getContentOBFFor(pages))
-        file.writestr("OEBPS/toc.ncx", self.getTOCFor(pages))
+        file.writestr("OEBPS/toc.ncx", self.getTOCNCXFor(pages))
+        file.writestr("OEBPS/Text/toc.xhtml", self.getTOCHTMLFor(pages))
         for page in pages:
             file.writestr(self.getFullPathFor(page), page["contents"].encode("utf8"))
             for image in page["images"]:
@@ -198,6 +199,7 @@ class Zipper:
  
         xml+= '<manifest>\n'
         xml+= '<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>\n'
+        xml+= '<item id="toc" href="Text/toc.xhtml" media-type="application/xhtml+xml"/>\n'
         ids = []
         for page in pages:
             xml+= '<item id="%s" href="%s" media-type="application/xhtml+xml"/>\n' % (self.getTitleFor(page), self.getPathFor(page))
@@ -220,7 +222,7 @@ class Zipper:
         xml+= '</package>'
         return unicode(xml).encode("utf8")
 
-    def getTOCFor(self, pages):
+    def getTOCNCXFor(self, pages):
         book_uri = pages[0]["uri"]
         book_title = pages[0]["title"]
         xml = '<?xml version="1.0" encoding="UTF-8"?>'
@@ -235,8 +237,12 @@ class Zipper:
         xml+= '<docTitle><text>%s</text></docTitle>' % book_title
         xml+= '<docAuthor><text>WikiSherpa</text></docAuthor>\n'
         xml+= '<navMap>\n'
+        xml+= '<navPoint class="chapter" id="toc" playOrder="1">'
+        xml+= '<navLabel><text>Table of Contents</text></navLabel>'
+        xml+= '<content src="Text/toc.xhtml"/>'
+        xml+= '</navPoint>\n'
         
-        i = 1
+        i = 2
         for page in pages:
             xml+= '<navPoint class="chapter" id="%s" playOrder="%s">' % (self.getTitleFor(page), str(i))
             xml+= '<navLabel><text>%s</text></navLabel>' % page["title"]
@@ -247,3 +253,16 @@ class Zipper:
         xml+= '\n</navMap>'
         xml+= '</ncx>'
         return unicode(xml).encode("utf8")
+
+    def getTOCHTMLFor(self, pages):
+        html = '<?xml version="1.0" encoding="utf-8"?>\n'
+        html+= '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">\n'
+        html+="<html><head><title>Contents</title></head><body>"
+        html+= "<h2>Contents</h2>"
+        html+= '<div><center>'
+
+        for page in pages:
+            html+= '<p><a href="%s">%s</a></p>' % (self.getPathFor(page), page["title"])
+
+        html+= '\n</center></div>/body></html>'
+        return unicode(html).encode("utf8")

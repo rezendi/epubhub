@@ -1,8 +1,9 @@
 Fix:
+ Kindle TOC.html:
+  http://allisonkraft.blogspot.com/2011/07/epub-done-and-kindle-toc-tips.html
+  http://www.cjs-easy-as-pie.com/p/create-ncx-file-by-araby-greene.html
  Render listings.
  Ile-de-France, Paris wikipedia tables.
- Validate.
- Check against Kindle.
  Full-size maps?
 
 API:
