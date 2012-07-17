@@ -215,6 +215,7 @@ class Zipper:
         xml+= '</manifest>\n'
         
         xml+= '<spine toc="ncx">\n'
+        xml+= '<itemref idref="toc" />'
         for page in pages:
             xml+= '<itemref idref="%s" />' % self.getTitleFor(page)
         xml+= '</spine>\n'
