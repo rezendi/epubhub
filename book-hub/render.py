@@ -134,7 +134,7 @@ class Zipper:
         file.writestr("META-INF/container.xml", self.getContainerXML())
         file.writestr("OEBPS/content.opf", self.getContentOBFFor(pages))
         file.writestr("OEBPS/toc.ncx", self.getTOCNCXFor(pages))
-        file.writestr("OEBPS/Text/toc.xhtml", self.getTOCHTMLFor(pages))
+        file.writestr("OEBPS/Text/toc.html", self.getTOCHTMLFor(pages))
         for page in pages:
             file.writestr(self.getFullPathFor(page), page["contents"].encode("utf8"))
             for image in page["images"]:
@@ -199,7 +199,7 @@ class Zipper:
  
         xml+= '<manifest>\n'
         xml+= '<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>\n'
-        xml+= '<item id="toc" href="Text/toc.xhtml" media-type="application/xhtml+xml"/>\n'
+        xml+= '<item id="toc" href="Text/toc.html" media-type="application/xhtml+xml"/>\n'
         ids = []
         for page in pages:
             xml+= '<item id="%s" href="%s" media-type="application/xhtml+xml"/>\n' % (self.getTitleFor(page), self.getPathFor(page))
@@ -240,7 +240,7 @@ class Zipper:
         xml+= '<navMap>\n'
         xml+= '<navPoint class="chapter" id="toc" playOrder="1">'
         xml+= '<navLabel><text>Table of Contents</text></navLabel>'
-        xml+= '<content src="Text/toc.xhtml"/>'
+        xml+= '<content src="Text/toc.html"/>'
         xml+= '</navPoint>\n'
         
         i = 2
@@ -256,14 +256,12 @@ class Zipper:
         return unicode(xml).encode("utf8")
 
     def getTOCHTMLFor(self, pages):
-        html = '<?xml version="1.0" encoding="utf-8"?>\n'
-        html+= '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">\n'
+        html = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">\n'
         html+="<html><head><title>Contents</title></head><body>"
-        html+= "<h2>Contents</h2>"
-        html+= '<div><center>'
+        html+= '<div><center><h2>Contents</h2>'
 
         for page in pages:
             html+= '<p><a href="%s">%s</a></p>' % (self.getPathFor(page), page["title"])
 
-        html+= '\n</center></div>/body></html>'
+        html+= '\n</center></div></body></html>'
         return unicode(html).encode("utf8")
