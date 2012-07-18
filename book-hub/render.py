@@ -100,7 +100,37 @@ class Renderer:
         if "listings" in section:
             keep = True
             for listing in section["listings"]:
-                html+="<HR/>"+unicode(json.dumps(listing))
+                if not "name" in listing:
+                    continue
+                html+="<LI><b>%s</b>" % listing["name"]
+                if "alt" in listing and len(listing["alt"].strip())>0:
+                    html+=" (<i>%s</i>)" % listing["alt"]
+                if "address" in listing and len(listing["address"].strip())>0:
+                    html+=", <i>address:</i> %s" % listing["address"]
+                if "directions" in listing and len(listing["directions"].strip())>0:
+                    html+=" (<i>%s</i>)" % listing["directions"]
+                if "email" in listing and len(listing["email"].strip())>0:
+                    html+=", <i>email:</i> %s" % listing["email"]
+                if "phone" in listing and len(listing["phone"].strip())>0:
+                    html+=", <i>phone:</i> %s" % listing["phone"]
+                if "fax" in listing and len(listing["fax"].strip())>0:
+                    html+=", <i>fax:</i> %s" % listing["fax"]
+                if "url" in listing and len(listing["url"].strip())>0:
+                    html+=", <i>url:</i> <a href='%s'>%s</a>" % (listing["url"],listing["url"])
+                if "hours" in listing and len(listing["hours"].strip())>0:
+                    html+=", <i>hours:</i> %s" % listing["hours"]
+                if "price" in listing and len(listing["price"].strip())>0:
+                    html+=", <i>price:</i> %s" % listing["price"]
+                if "checkin" in listing and len(listing["checkin"].strip())>0:
+                    html+=", <i>check in:</i> %s" % listing["checkin"]
+                if "checkout" in listing and len(listing["checkout"].strip())>0:
+                    html+=", <i>check out:</i> %s" % listing["checkout"]
+                html+=". "
+                if "description" in listing and len(listing["description"].strip())>0:
+                    html+=listing["description"]+"<br/>"
+                else:
+                    html+="<br/>"
+                html+="<br/>"
         if not keep:
             return ""
         html+="<HR/>"

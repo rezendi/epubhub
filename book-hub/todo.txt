@@ -1,7 +1,5 @@
 Fix:
- Render listings.
- Ile-de-France, Paris wikipedia tables.
- Full-size maps?
+ In-page contents.
 
 API:
  Sequence correctly (v2.)
