@@ -83,7 +83,7 @@ class Renderer:
         return pages
 
     def renderSection(self, section, rank=1, cascade=True):
-        html ="<H"+str(rank)+">"+section["name"]+"</H"+str(rank)+">"
+        html ="<a name=\""+section["name"]+"></a><H"+str(rank)+">"+section["name"]+"</H"+str(rank)+">"
         keep = False
         if "images" in section:
             keep = True
@@ -154,6 +154,7 @@ class Renderer:
         filename = filename if slash<0 else filename[1+slash:]
         filename = filename.strip().replace(" ","_").replace("'","").replace("%27","").replace("%28","").replace("%2C","")
         filename = filename.replace("!","").replace(",","")
+        filename = filename.encode("ascii","ignore")
         return filename
     
 class Zipper:
@@ -165,16 +166,19 @@ class Zipper:
         file.writestr("OEBPS/content.opf", self.getContentOBFFor(pages))
         file.writestr("OEBPS/toc.ncx", self.getTOCNCXFor(pages))
         file.writestr("OEBPS/Text/toc.html", self.getTOCHTMLFor(pages))
+        imageurls = []
         for page in pages:
             file.writestr(self.getFullPathFor(page), page["contents"].encode("utf8"))
             for image in page["images"]:
                 url = image["url"] # image["secondUrl"] if "secondUrl" in image else image["url"]
-                raw = memcache.get(url)
-                if raw is None:
-                    logging.info("Fetching "+url)
-                    response = urlfetch.fetch(url)
-                    raw = response.content
-                file.writestr("OEBPS/Images/"+self.getImageFileNameFor(image), raw)
+                if url not in imageurls:
+                    raw = memcache.get(url)
+                    if raw is None:
+                        logging.info("Fetching "+url)
+                        response = urlfetch.fetch(url)
+                        raw = response.content
+                    imageurls.append(url)
+                    file.writestr("OEBPS/Images/"+self.getImageFileNameFor(image), raw)
         logging.info("Zipped "+str(file.namelist()))
         file.close()
         return [file, stream]
@@ -183,8 +187,9 @@ class Zipper:
         return "OEBPS/"+self.getPathFor(page)
 
     def getPathFor(self, page):
-        return "Text/"+self.getTitleFor(page)+".xhtml"
-    
+        path = "Text/"+self.getTitleFor(page)+".xhtml"
+        return path.encode("ascii","ignore")
+
     def getTitleFor(self, page):
         title = page["title"].replace("/","_").replace(" ","_")
         return unicode(title)
@@ -195,6 +200,7 @@ class Zipper:
         filename = filename if slash<0 else filename[1+slash:]
         filename = filename.strip().replace(" ","_").replace("'","").replace("%27","").replace("%28","").replace("%2C","")
         filename = filename.replace("!","").replace(",","")
+        filename = filename.encode("ascii","ignore")
         return filename
     
     def getImageNameFor(self, image):
