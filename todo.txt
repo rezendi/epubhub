@@ -1,23 +1,10 @@
-Domain:
- epubhost
- bookscatter
- bookskim
- bookslap
- booksplitter
- bookstray
- libraristan
- bookbranch ($2K)
- razorbook ($2K)
+http://blog.notdot.net/2010/08/Using-BlobReader-wildcard-subdomains-and-webapp2
 
-Fix:
+Guide:
  Intro page.
  In-page contents.
-
-API:
- Sequence correctly (v2.)
-
-Then:
+ Inner links.
  Thailand.
 
-Eventually:
- Inner links.
+Guide API:
+ Sequence correctly (v2.)
