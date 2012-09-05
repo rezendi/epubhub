@@ -1,4 +1,4 @@
-application: book-hub
+application: epubhost
 version: 1
 runtime: python27
 api_version: 1
@@ -8,6 +8,9 @@ handlers:
 - url: /favicon\.ico
   static_files: favicon.ico
   upload: favicon\.ico
+
+- url: /guide.*
+  script: guide.app
 
 - url: .*
   script: main.app

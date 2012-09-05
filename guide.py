@@ -7,7 +7,7 @@ class GetGuide(webapp2.RequestHandler):
         if not self.request.get('dest'):
             self.response.out.write("No destination")
             return
-        taskqueue.add(url='/guide', params={'destination' : self.request.get('dest')})
+        taskqueue.add(url='/guide/make', params={'destination' : self.request.get('dest')})
         self.response.out.write("Task launched")
 
 
@@ -30,7 +30,7 @@ class GuideTask(webapp2.RequestHandler):
         self.response.out.write(zipstream.getvalue())
 
 app = webapp2.WSGIApplication([
-    ('/get', GetGuide),
-    ('/guide', GuideTask),
+    ('/guide/get', GetGuide),
+    ('/guide/make', GuideTask),
     ],
     debug=True)

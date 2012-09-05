@@ -1,0 +1,23 @@
+Domain:
+ epubhost
+ bookscatter
+ bookskim
+ bookslap
+ booksplitter
+ bookstray
+ libraristan
+ bookbranch ($2K)
+ razorbook ($2K)
+
+Fix:
+ Intro page.
+ In-page contents.
+
+API:
+ Sequence correctly (v2.)
+
+Then:
+ Thailand.
+
+Eventually:
+ Inner links.
