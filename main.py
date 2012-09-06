@@ -15,18 +15,26 @@ class Main(webapp.RequestHandler):
             if account is None:
                 account = db.GqlQuery("SELECT * FROM Account WHERE userid = :1", user.user_id()).get()
             if account is None:
-                account = model.Account(googleUser = user.user_id()).put()
+                account = model.Account(googleUser = user.user_id())
+                account.put()
             elif account.googleUser is None:
                 account.googleUser = user.user_id()
                 account.put()
             session["account"] = account
 
-        if session.get("account") is None:
+        account = session.get("account")
+        if account is None:
             html+= "<LI><a href='%s'>Log In with Google</a></LI>" % users.create_login_url("/")
             html+= "<LI><a href='/auth/twitter'>Log In with Twitter</a></LI>"
             html+= "<LI><a href='/auth/facebook'>Log In with Facebook</a></LI>"
         else:
             html+="<LI><a href='/list'>My Books</a></LI>"
+            if account.googleUser is None:
+                html+= "<LI><a href='%s'>Attach Google Account</a></LI>" % users.create_login_url("/")
+            if account.twitterHandle is None:
+                html+= "<LI><a href='/auth/twitter'>Attach Twitter Account</a></LI>"
+            if account.twitterHandle is None:
+                html+= "<LI><a href='/auth/facebook'>Attach Facebook Account</a></LI>"
             html+="<LI><a href='/logout'>Log Out</a></LI>"
         html+= "</UL>"
         self.response.out.write(html)

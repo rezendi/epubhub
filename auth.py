@@ -59,7 +59,7 @@ class TwitterCallback(webapp.RequestHandler):
                 twitterToken = auth.access_token.secret
             )
         else:
-          account.twitterHandle = twitterUsername,
+          account.twitterHandle = twitterUsername
           account.twitterKey = auth.acces_token.key
           account.twitterToken = auth.access_token.secret
 

@@ -16,12 +16,12 @@ class ePubFile(db.Model):
 class InternalFile(db.Model):
   timeCreated = db.DateTimeProperty(auto_now_add=True)
   timeEdited = db.DateTimeProperty(auto_now=True)
-  epub = db.ReferenceProperty()
+  epub = db.ReferenceProperty(ePubFile)
   name = db.StringProperty()
   text = db.TextProperty()
   data = db.BlobProperty()
 
-class Account (db.Model):
+class Account(db.Model):
   timeCreated = db.DateTimeProperty(auto_now_add=True)
   timeEdited = db.DateTimeProperty(auto_now=True)
   googleUser = db.StringProperty()
@@ -31,3 +31,8 @@ class Account (db.Model):
   facebookUID = db.StringProperty()
   facebookToken = db.StringProperty()
 
+class LibraryEntry(db.Model):
+  timeCreated = db.DateTimeProperty(auto_now_add=True)
+  timeEdited = db.DateTimeProperty(auto_now=True)
+  file = db.ReferenceProperty(ePubFile)
+  user = db.ReferenceProperty(Account)
