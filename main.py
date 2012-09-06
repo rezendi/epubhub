@@ -1,12 +1,35 @@
 import json, logging, zipfile
+from google.appengine.api import users
 from google.appengine.ext import blobstore, db, webapp
 from google.appengine.ext.webapp import blobstore_handlers
+from gaesessions import get_current_session
 import model, unpack
 
 class HelloWorld(webapp.RequestHandler):
     def get(self):
-        session["test"] = "X"+str(session["test"])
-        self.response.out.write("Hello world!")
+        html = "<UL>"
+        session = get_current_session()
+        user = users.get_current_user()
+        if user:
+            account = session.get("account")
+            if account is None:
+                account = db.GqlQuery("SELECT * FROM Account WHERE userid = :1", user.user_id()).get()
+            if account is None:
+                account = model.Account(googleUser = user.user_id()).put()
+            elif account.googleUser is None:
+                account.googleUser = user.user_id()
+                account.put()
+            session["account"] = account
+
+        if session.get("account") is None:
+            html+= "<LI><a href='%s'>Log In with Google</a></LI>" % users.create_login_url("/")
+            html+= "<LI><a href='/auth/twitter'>Log In with Twitter</a></LI>"
+            html+= "<LI><a href='/auth/facebook'>Log In with Facebook</a></LI>"
+        else:
+            html+="<LI><a href='/list'>My Books</a></LI>"
+            html+="<LI><a href='%s'>Log Out</a>>/LI>" % users.create_logout_url("/")
+        html+= "</UL>"
+        self.response.out.write(html)
 
 class UploadForm(webapp.RequestHandler):
     def get(self):

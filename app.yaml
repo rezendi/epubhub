@@ -10,7 +10,7 @@ handlers:
   upload: favicon\.ico
 
 - url: /auth.*
-  script: guide.app
+  script: auth.app
 
 - url: /guide.*
   script: guide.app
