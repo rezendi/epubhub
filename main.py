@@ -5,6 +5,7 @@ import model, unpack
 
 class HelloWorld(webapp.RequestHandler):
     def get(self):
+        session["test"] = "X"+str(session["test"])
         self.response.out.write("Hello world!")
 
 class UploadForm(webapp.RequestHandler):
@@ -116,6 +117,7 @@ class Authorize(webapp.RequestHandler):
         self.response.out.write("Authorize here")
 
 app = webapp.WSGIApplication([
+    ('/', HelloWorld),
     ('/hello', HelloWorld),
     ('/upload', UploadForm),
     ('/upload_complete', UploadHandler),
