@@ -27,7 +27,7 @@ class HelloWorld(webapp.RequestHandler):
             html+= "<LI><a href='/auth/facebook'>Log In with Facebook</a></LI>"
         else:
             html+="<LI><a href='/list'>My Books</a></LI>"
-            html+="<LI><a href='%s'>Log Out</a>>/LI>" % users.create_logout_url("/")
+            html+="<LI><a href='%s'>Log Out</a></LI>" % users.create_logout_url("/")
         html+= "</UL>"
         self.response.out.write(html)
 

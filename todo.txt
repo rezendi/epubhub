@@ -6,11 +6,6 @@ View:
  Insert stylesheet tags.
  Next/Prev overlays.
 
-Accounts:
- Log in.
- FB.
- Twitter.
-
 Guide:
  Intro page.
  In-page contents.
