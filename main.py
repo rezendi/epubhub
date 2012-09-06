@@ -26,12 +26,13 @@ class List(webapp.RequestHandler):
     def get(self):
         for file in model.ePubFile.all():
             self.response.out.write("<b>%s</b><UL>" % file.blob.filename)
+            self.response.out.write("<LI><a href='/edit?key=%s'>Edit</a></LI>" % file.key())
             self.response.out.write("<LI><a href='/unpack?key=%s&blob_key=%s'>Unpack</a></LI>" % (file.key(),file.blob.key()))
             self.response.out.write("<LI><a href='/contents?key=%s&blob_key=%s'>Contents</a></LI>" % (file.key(),file.blob.key()))
             self.response.out.write("<UL>");
             internals = model.InternalFile.all().filter("epub = ",file)
             for internal in internals:
-                self.response.out.write("<LI><a href='/view?key=%s'>%s</a></LI>" % (internal.key(), internal.name))
+                self.response.out.write("<LI><a href='/view/%s/%s'>%s</a></LI>" % (file.key(), internal.name, internal.name))
             self.response.out.write("</UL>");
             self.response.out.write("</uL><hr/>")
 
@@ -59,12 +60,19 @@ class Unpack(webapp.RequestHandler):
 
 class View(webapp.RequestHandler):
     def get(self):
-        key = self.request.get('key')
-        internal = db.get(key)
-        if internal.text is not None:
-            self.response.out.write(internal.text)
-        else:
+        components = self.request.path.split("/")
+        path = "/".join(components[3:])
+        logging.info("path %s" % path)
+        internal = model.InternalFile.all().filter("name = ",path).get()
+        if internal.data is not None:
+            self.response.headers['Content-Type'] = "image"
             self.response.out.write(internal.data)
+        else:
+            if path.endswith(".css") or path.endswith(".txt") or path.endswith("mimetype"):
+                self.response.headers['Content-Type'] = "text/plain"
+            elif path.endswith(".xml") or path.endswith(".ncx") or path.endswith(".opf"):
+                self.response.headers['Content-Type'] = "application/xml"
+            self.response.out.write(internal.text)
 
 class Search(webapp.RequestHandler):
     def get(self):
@@ -84,7 +92,14 @@ class Quote(webapp.RequestHandler):
 
 class Edit(webapp.RequestHandler):
     def get(self):
-        self.response.out.write("Show edit form")
+        key = self.request.get('key')
+        ePubFile = db.get(key)
+        self.response.out.write("<UL>")
+        self.response.out.write("<LI>Language: %s</LI>" % ePubFile.language)
+        self.response.out.write("<LI>Title: %s</LI>" % ePubFile.title)
+        self.response.out.write("<LI>Creator: %s</LI>" % ePubFile.creator)
+        self.response.out.write("<LI>Publisher: %s</LI>" % ePubFile.publisher)
+        self.response.out.write("</UL>")
 
     def post(self):
         self.response.out.write("Handle edit form")
@@ -106,7 +121,7 @@ app = webapp.WSGIApplication([
     ('/upload_complete', UploadHandler),
     ('/unpack', Unpack),
     ('/list', List),
-    ('/view', View),
+    ('/view/.*', View),
     ('/edit', Edit),
     ('/contents', Contents),
     ('/download', Download),
