@@ -5,7 +5,7 @@ from google.appengine.ext.webapp import blobstore_handlers
 from gaesessions import get_current_session
 import model, unpack
 
-class HelloWorld(webapp.RequestHandler):
+class Main(webapp.RequestHandler):
     def get(self):
         html = "<UL>"
         session = get_current_session()
@@ -27,9 +27,18 @@ class HelloWorld(webapp.RequestHandler):
             html+= "<LI><a href='/auth/facebook'>Log In with Facebook</a></LI>"
         else:
             html+="<LI><a href='/list'>My Books</a></LI>"
-            html+="<LI><a href='%s'>Log Out</a></LI>" % users.create_logout_url("/")
+            html+="<LI><a href='/logout'>Log Out</a></LI>"
         html+= "</UL>"
         self.response.out.write(html)
+
+class LogOut(webapp.RequestHandler):
+    def get(self):
+        session = get_current_session()
+        session.terminate()
+        if users.get_current_user():
+            self.redirect(users.create_logout_url("/"))
+        else:
+            self.redirect("/")
 
 class UploadForm(webapp.RequestHandler):
     def get(self):
@@ -140,8 +149,8 @@ class Authorize(webapp.RequestHandler):
         self.response.out.write("Authorize here")
 
 app = webapp.WSGIApplication([
-    ('/', HelloWorld),
-    ('/hello', HelloWorld),
+    ('/', Main),
+    ('/logout', LogOut),
     ('/upload', UploadForm),
     ('/upload_complete', UploadHandler),
     ('/unpack', Unpack),
