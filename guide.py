@@ -1,8 +1,9 @@
-import json, logging, webapp2
+import json, logging
 from google.appengine.api import taskqueue
+from google.appengine.ext import webapp
 import render
 
-class GetGuide(webapp2.RequestHandler):
+class GetGuide(webapp.RequestHandler):
     def get(self):
         if not self.request.get('dest'):
             self.response.out.write("No destination")
@@ -11,7 +12,7 @@ class GetGuide(webapp2.RequestHandler):
         self.response.out.write("Task launched")
 
 
-class GuideTask(webapp2.RequestHandler):
+class GuideTask(webapp.RequestHandler):
     def get(self):
         return self.post()
 
@@ -29,7 +30,7 @@ class GuideTask(webapp2.RequestHandler):
         self.response.headers['Content-Disposition'] = 'attachment; filename="'+title+'.epub"'
         self.response.out.write(zipstream.getvalue())
 
-app = webapp2.WSGIApplication([
+app = webapp.WSGIApplication([
     ('/guide/get', GetGuide),
     ('/guide/make', GuideTask),
     ],

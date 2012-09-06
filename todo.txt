@@ -1,4 +1,14 @@
-http://blog.notdot.net/2010/08/Using-BlobReader-wildcard-subdomains-and-webapp2
+View:
+ By path not key. (Use book key for now; can have unique title later.)
+ Insert stylesheet tags.
+ Next/Prev overlays.
+
+Unpack:
+ Parse, store metadata.
+
+Search.
+Share.
+Email.
 
 Guide:
  Intro page.
