@@ -1,10 +1,10 @@
-Search.
-Share.
-Email.
-
 View:
- Insert stylesheet tags.
  Next/Prev overlays.
+ Paragraph overlays.
+
+Share:
+ Create URL from paragraph overlays.
+ 
 
 Guide:
  Intro page.

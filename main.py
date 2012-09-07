@@ -1,9 +1,15 @@
-import json, logging, zipfile
-from google.appengine.api import users
+import json, logging, urllib, zipfile
+from google.appengine.api import search, users
 from google.appengine.ext import blobstore, db, webapp
 from google.appengine.ext.webapp import blobstore_handlers
 from gaesessions import get_current_session
 import model, unpack
+
+def enforce_login(handler):
+    session = get_current_session()
+    account = session.get("account")
+    if account is None:
+        handler.redirect("/")
 
 class Main(webapp.RequestHandler):
     def get(self):
@@ -12,23 +18,25 @@ class Main(webapp.RequestHandler):
         if user:
             account = db.GqlQuery("SELECT * FROM Account WHERE googleUserID = :1", user.user_id()).get()
             if account is None:
-                logging.info("No users Defaulting to session account")
-                account = session.get("account")
+                account_key = session.get("account")
+                account = None if account_key is None else db.get(account_key)
             if account is None:
                 account = model.Account(googleUserID = user.user_id())
                 account.put()
             elif account.googleUserID is None:
                 account.googleUserID = user.user_id()
                 account.put()
-            session["account"] = account
+            session["account"] = account.key()
 
-        html = "<UL>"
-        account = session.get("account")
+        html ="<html><body><UL>"
+        account_key = session.get("account")
+        account = None if account_key is None else db.get(account_key)
         if account is None:
             html+= "<LI><a href='%s'>Log In with Google</a></LI>" % users.create_login_url("/")
             html+= "<LI><a href='/auth/twitter'>Log In with Twitter</a></LI>"
             html+= "<LI><a href='/auth/facebook'>Log In with Facebook</a></LI>"
         else:
+            html+="<LI><a href='/upload'>Upload</a></LI>"
             html+="<LI><a href='/list'>My Books</a></LI>"
             if account.googleUserID is None:
                 html+= "<LI><a href='%s'>Attach Google Account</a></LI>" % users.create_login_url("/")
@@ -38,6 +46,9 @@ class Main(webapp.RequestHandler):
                 html+= "<LI><a href='/auth/facebook'>Attach Facebook Account</a></LI>"
             html+="<LI><a href='/logout'>Log Out</a></LI>"
         html+= "</UL>"
+        html+='<form action="/search" method="POST">'
+        html+="""Search: <input type="search" name="q"><br> <input type="submit" name="submit" value="Submit"> </form>"""
+        html+="</html></body>"
         self.response.out.write(html)
 
 class LogOut(webapp.RequestHandler):
@@ -51,6 +62,7 @@ class LogOut(webapp.RequestHandler):
 
 class UploadForm(webapp.RequestHandler):
     def get(self):
+        enforce_login(self)
         upload_url = blobstore.create_upload_url('/upload_complete')
         self.response.out.write('<html><body>')
         self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
@@ -58,10 +70,18 @@ class UploadForm(webapp.RequestHandler):
 
 class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
     def post(self):
+        enforce_login(self)
         upload_files = self.get_uploads('file')  # 'file' is file upload field in the form
         blob_info = upload_files[0]
-        file = model.ePubFile(blob = blob_info).put()
-        taskqueue.add(url='/unpack', params={'key' : file.key(), 'blob_key' : file.blob.key()})
+
+        file = model.ePubFile(blob = blob_info)
+        file.put()
+        entry = model.LibraryEntry(file = file, user = get_current_session().get("account"))
+        entry.put()
+
+        epub = zipfile.ZipFile(blobstore.BlobReader(file.blob.key()))
+        unpacker = unpack.Unpacker()
+        unpacker.unpack(file.key(), epub)
         self.redirect('/list')
 
 class List(webapp.RequestHandler):
@@ -92,40 +112,38 @@ class Download(blobstore_handlers.BlobstoreDownloadHandler):
         blob_info = blobstore.BlobInfo.get(key)
         self.send_blob(blob_info, save_as = True)
 
-class Unpack(webapp.RequestHandler):
-    def get(self):
-        key = self.request.get('key')
-        blob_key = self.request.get('blob_key')
-        epub = zipfile.ZipFile(blobstore.BlobReader(blob_key))
-        unpacker = unpack.Unpacker()
-        unpacker.unpack(key, epub)
-
 class View(webapp.RequestHandler):
     def get(self):
         components = self.request.path.split("/")
-        path = "/".join(components[3:])
-        logging.info("path %s" % path)
+        path = urllib.unquote_plus("/".join(components[3:]))
         internal = model.InternalFile.all().filter("name = ",path).get()
-        if internal.data is not None:
-            self.response.headers['Content-Type'] = "image"
-            self.response.out.write(internal.data)
-        else:
-            if path.endswith(".css") or path.endswith(".txt") or path.endswith("mimetype"):
-                self.response.headers['Content-Type'] = "text/plain"
-            elif path.endswith(".xml") or path.endswith(".ncx") or path.endswith(".opf"):
-                self.response.headers['Content-Type'] = "application/xml"
-            self.response.out.write(internal.text)
+        renderer = unpack.Renderer()
+        self.response.headers['Content-Type'] = renderer.contentHeader(internal)
+        self.response.out.write(renderer.content(internal))
 
 class Search(webapp.RequestHandler):
     def get(self):
-        self.response.out.write("Search here")
+        return self.post()
+
+    def post(self):
+        index = search.Index("chapters")
+        query = self.request.get('q')
+        try:
+            search_results = index.search(query)
+            for doc in search_results:
+                internal = db.get(doc.doc_id)
+                self.response.out.write("<LI><a href='/view/%s/%s'>%s</a></LI>" % (internal.epub.key(), internal.name, internal.name))
+        except search.Error:
+            self.response.out.write("Error")
 
 class Email(webapp.RequestHandler):
     def get(self):
+        enforce_login(self)
         self.response.out.write("Email here")
 
 class Share(webapp.RequestHandler):
     def get(self):
+        enforce_login(self)
         self.response.out.write("Share here")
 
 class Quote(webapp.RequestHandler):
@@ -134,6 +152,7 @@ class Quote(webapp.RequestHandler):
 
 class Edit(webapp.RequestHandler):
     def get(self):
+        enforce_login(self)
         key = self.request.get('key')
         ePubFile = db.get(key)
         self.response.out.write("<UL>")
@@ -144,25 +163,23 @@ class Edit(webapp.RequestHandler):
         self.response.out.write("</UL>")
 
     def post(self):
+        enforce_login(self)
         self.response.out.write("Handle edit form")
 
 class Account(webapp.RequestHandler):
     def get(self):
+        enforce_login(self)
         self.response.out.write("Show account")
 
     def post(self):
+        enforce_login(self)
         self.response.out.write("Change account")
-
-class Authorize(webapp.RequestHandler):
-    def get(self):
-        self.response.out.write("Authorize here")
 
 app = webapp.WSGIApplication([
     ('/', Main),
     ('/logout', LogOut),
     ('/upload', UploadForm),
     ('/upload_complete', UploadHandler),
-    ('/unpack', Unpack),
     ('/list', List),
     ('/view/.*', View),
     ('/edit', Edit),
@@ -173,6 +190,5 @@ app = webapp.WSGIApplication([
     ('/share', Share),
     ('/quote', Quote),
     ('/account', Account),
-    ('/authorize', Authorize),
     ],
     debug=True)

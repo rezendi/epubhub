@@ -51,7 +51,8 @@ class TwitterCallback(webapp.RequestHandler):
 
         account = db.GqlQuery("SELECT * FROM Account WHERE twitterHandle = :1", twitterUsername).get()
         if account is None:
-            account = session.get("account")
+            account_key = session.get("account")
+            account = None if account_key is None else db.get(account_key)
         if account is None:
             account = model.Account
         account.twitterHandle = twitterUsername
@@ -59,8 +60,8 @@ class TwitterCallback(webapp.RequestHandler):
         account.twitterToken = auth.access_token.secret
 
         account.put()
-        session["account"] = account
-        self.response.out.write("Twitter registered.")
+        session["account"] = account.key()
+        self.redirect("/")
 
 class RegisterFacebook(webapp.RequestHandler):
     def get(self):
@@ -86,15 +87,16 @@ class FacebookCallback(webapp.RequestHandler):
 
         account = db.GqlQuery("SELECT * FROM Account WHERE facebookUID = :1", fbUID).get()
         if account is None:
-            account = session.get("account")
+            account_key = session.get("account")
+            account = None if account_key is None else db.get(account_key)
         if account is None:
             account = model.Account()
         account.facebookUID = fbUID
         account.facebookToken = access_token
 
         account.put()
-        session["account"] = account
-        self.response.out.write("Facebook registered.")
+        session["account"] = account.key()
+        self.redirect("/")
 
 app = webapp.WSGIApplication([
     ('/auth/twitter', RegisterTwitter),
