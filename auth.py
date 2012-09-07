@@ -49,19 +49,14 @@ class TwitterCallback(webapp.RequestHandler):
         twitter = tweepy.API(auth)
         twitterUsername = twitter.auth.get_username()
 
-        account = session.get("account")
+        account = db.GqlQuery("SELECT * FROM Account WHERE twitterHandle = :1", twitterUsername).get()
         if account is None:
-            account = db.GqlQuery("SELECT * FROM Account WHERE twitterHandle = :1", twitterUsername).get()
+            account = session.get("account")
         if account is None:
-            account = model.Account(
-                twitterHandle = twitterUsername,
-                twitterKey = auth.access_token.key,
-                twitterToken = auth.access_token.secret
-            )
-        else:
-          account.twitterHandle = twitterUsername
-          account.twitterKey = auth.acces_token.key
-          account.twitterToken = auth.access_token.secret
+            account = model.Account
+        account.twitterHandle = twitterUsername
+        account.twitterKey = auth.access_token.key
+        account.twitterToken = auth.access_token.secret
 
         account.put()
         session["account"] = account
@@ -84,17 +79,18 @@ class FacebookCallback(webapp.RequestHandler):
             urllib.urlencode(args)).read())
         access_token = response["access_token"][-1]
 
+        session = get_current_session()
+
         me = urllib.urlopen("https://graph.facebook.com/me?access_token="+access_token).read()
         fbUID = json.loads(me)["id"]
-        session = get_current_session()
-        account = session.get("account")
+
+        account = db.GqlQuery("SELECT * FROM Account WHERE facebookUID = :1", fbUID).get()
         if account is None:
-            account = db.GqlQuery("SELECT * FROM Account WHERE facebookUID = :1", fbUID).get()
+            account = session.get("account")
         if account is None:
-            account = model.Account(facebookToken = access_token, facebookUID = fbUID)
-        else:
-          account.facebookUID = fbUID
-          account.facebookToken = access_token
+            account = model.Account()
+        account.facebookUID = fbUID
+        account.facebookToken = access_token
 
         account.put()
         session["account"] = account

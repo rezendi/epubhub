@@ -24,7 +24,8 @@ class InternalFile(db.Model):
 class Account(db.Model):
   timeCreated = db.DateTimeProperty(auto_now_add=True)
   timeEdited = db.DateTimeProperty(auto_now=True)
-  googleUser = db.StringProperty()
+  googleUserID = db.StringProperty()
+  twitterUserID = db.StringProperty()
   twitterHandle = db.StringProperty()
   twitterKey = db.StringProperty()
   twitterToken = db.StringProperty()

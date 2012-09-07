@@ -7,21 +7,22 @@ import model, unpack
 
 class Main(webapp.RequestHandler):
     def get(self):
-        html = "<UL>"
         session = get_current_session()
         user = users.get_current_user()
         if user:
-            account = session.get("account")
+            account = db.GqlQuery("SELECT * FROM Account WHERE googleUserID = :1", user.user_id()).get()
             if account is None:
-                account = db.GqlQuery("SELECT * FROM Account WHERE userid = :1", user.user_id()).get()
+                logging.info("No users Defaulting to session account")
+                account = session.get("account")
             if account is None:
-                account = model.Account(googleUser = user.user_id())
+                account = model.Account(googleUserID = user.user_id())
                 account.put()
-            elif account.googleUser is None:
-                account.googleUser = user.user_id()
+            elif account.googleUserID is None:
+                account.googleUserID = user.user_id()
                 account.put()
             session["account"] = account
 
+        html = "<UL>"
         account = session.get("account")
         if account is None:
             html+= "<LI><a href='%s'>Log In with Google</a></LI>" % users.create_login_url("/")
@@ -29,11 +30,11 @@ class Main(webapp.RequestHandler):
             html+= "<LI><a href='/auth/facebook'>Log In with Facebook</a></LI>"
         else:
             html+="<LI><a href='/list'>My Books</a></LI>"
-            if account.googleUser is None:
+            if account.googleUserID is None:
                 html+= "<LI><a href='%s'>Attach Google Account</a></LI>" % users.create_login_url("/")
             if account.twitterHandle is None:
                 html+= "<LI><a href='/auth/twitter'>Attach Twitter Account</a></LI>"
-            if account.twitterHandle is None:
+            if account.facebookUID is None:
                 html+= "<LI><a href='/auth/facebook'>Attach Facebook Account</a></LI>"
             html+="<LI><a href='/logout'>Log Out</a></LI>"
         html+= "</UL>"
