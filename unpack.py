@@ -5,10 +5,34 @@ from google.appengine.ext import blobstore, db
 import model
 
 class Unpacker:
-    def unpack(self, key, zippedfile):
-        ePubFile = db.get(key)
-        existing = model.InternalFile.all().filter("epub = ", ePubFile)
+    def unpack(self, epub):
+        zippedfile = zipfile.ZipFile(blobstore.BlobReader(epub.blob.key()))
+        existing = model.InternalFile.all().filter("epub = ", epub)
         db.delete(existing)
+        replaceWith = None
+        for filename in zippedfile.namelist():
+            manifest = zippedfile.read(filename)
+            if filename.endswith("content.opf"):
+                possible_blobs = blobstore.BlobInfo.all().filter("size = ", epub.blob.size).fetch(10)
+                for possible_blob in possible_blobs:
+                    possible_epub = model.ePubFile.all().filter("blob_key = ", str(possible_blob.key())).get()
+                    if possible_epub is not None:
+                        internals = model.InternalFile.all().filter("epub = ", possible_epub)
+                        for internal in internals:
+                            if internal.path.endswith("content.opf") and internal.text==db.Text(manifest, encoding="utf-8"):
+                                replaceWith = possible_epub
+            
+                #Deduplicate
+                if replaceWith is None:
+                    self.parseMetadata(epub, manifest)
+                else:
+                    entry = model.LibraryEntry.all().filter("epub = ", epub).get()
+                    if entry is not None:
+                        entry.epub = replaceWith
+                        entry.put()
+                        db.delete(epub)
+                        return
+
         for filename in zippedfile.namelist():
             logging.info("Unpacking "+filename)
             file = zippedfile.read(filename)
@@ -19,22 +43,13 @@ class Unpacker:
                 data = db.Blob(file)
 
             internalFile = model.InternalFile(
-                epub = ePubFile,
-                name = filename,
+                epub = epub,
+                path = filename,
                 text = text,
                 data = data
             )
             internalFile.put()
             
-            if filename.endswith("html"):
-                document = search.Document(
-                    doc_id=str(internalFile.key()),
-                    fields=[search.HtmlField(name="content",value=text)]
-                )
-                search.Index(name="chapters").add(document)
-            if filename.endswith("content.opf"):
-                self.parseMetadata(ePubFile, file)
-
     def parseMetadata(self, ePubFile, content):
       parser = ePubMetadataParser()
       try:
@@ -76,7 +91,7 @@ class Renderer:
     def contentHeader(self, internal):
         if internal.data is not None:
             return "image"
-        path = internal.name
+        path = internal.path
         if path.endswith(".css") or path.endswith(".txt") or path.endswith("mimetype"):
             return "text/plain"
         elif path.endswith(".xml") or path.endswith(".ncx") or path.endswith(".opf"):
@@ -91,9 +106,11 @@ class Renderer:
         sHead = text.find("</head>")
         if sHead == -1:
             sHead = text.find("</HEAD>")
-        return text[:sHead]+self.overlay()+text[sHead:]
+        return text[:sHead]+self.overlay(internal)+text[sHead:]
 
-    def overlay(self):
-        html = '<script type="text/javascript" src="/static/jquery-1.7.2.min.js"></script>\n'
-        html+= '<script type="text/javascript" src="/static/ephubhost.js"></script>\n'
+    def overlay(self, internal):
+        html = '<script src="/static/jquery-1.7.2.min.js"></script>\n'
+        html+= '<script src="/static/ephubhost.js"></script>\n'
+        html+= '<script>var epub="%s", file="%s"</script>\n' % (internal.epub.key(), internal.key())
         return html
+      

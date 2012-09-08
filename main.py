@@ -1,5 +1,5 @@
 import json, logging, urllib, zipfile
-from google.appengine.api import search, users
+from google.appengine.api import search, taskqueue, users
 from google.appengine.ext import blobstore, db, webapp
 from google.appengine.ext.webapp import blobstore_handlers
 from gaesessions import get_current_session
@@ -74,37 +74,60 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
         upload_files = self.get_uploads('file')  # 'file' is file upload field in the form
         blob_info = upload_files[0]
 
-        file = model.ePubFile(blob = blob_info)
-        file.put()
-        entry = model.LibraryEntry(file = file, user = get_current_session().get("account"))
+        epub = model.ePubFile(blob = blob_info, blob_key = str(blob_info.key()))
+        epub.put()
+        entry = model.LibraryEntry(epub = epub, user = get_current_session().get("account"))
         entry.put()
 
-        epub = zipfile.ZipFile(blobstore.BlobReader(file.blob.key()))
         unpacker = unpack.Unpacker()
-        unpacker.unpack(file.key(), epub)
+        unpacker.unpack(epub)
+        taskqueue.add(url='/index', params={'key':epub.key()})
         self.redirect('/list')
+
+class Index(webapp.RequestHandler):
+    def post(self):
+        key = self.request.get('key');
+        file = db.get(key)
+        internals = model.InternalFile.all().filter("epub = ",file)
+        for internal in internals:
+            if internal.path.endswith("html"):
+                document = search.Document(
+                    doc_id=str(internal.key()),
+                    fields=[search.HtmlField(name="content",value=internal.text)]
+                )
+                search.Index(name="chapters").add(document)
 
 class List(webapp.RequestHandler):
     def get(self):
+        self.response.out.write("<a href='/upload'>Upload</a><br/><hr/>")
         for file in model.ePubFile.all():
             self.response.out.write("<b>%s</b><UL>" % file.blob.filename)
-            self.response.out.write("<LI><a href='/edit?key=%s'>Edit</a></LI>" % file.key())
-            self.response.out.write("<LI><a href='/unpack?key=%s&blob_key=%s'>Unpack</a></LI>" % (file.key(),file.blob.key()))
-            self.response.out.write("<LI><a href='/contents?key=%s&blob_key=%s'>Contents</a></LI>" % (file.key(),file.blob.key()))
-            self.response.out.write("<UL>");
-            internals = model.InternalFile.all().filter("epub = ",file)
-            for internal in internals:
-                self.response.out.write("<LI><a href='/view/%s/%s'>%s</a></LI>" % (file.key(), internal.name, internal.name))
-            self.response.out.write("</UL>");
-            self.response.out.write("</uL><hr/>")
+            self.response.out.write("<LI><a href='/edit?key=%s'>Metadata</a></LI>" % file.key())
+            #self.response.out.write("<LI><a href='/unpack?key=%s&blob_key=%s'>Unpack</a></LI>" % (file.key(),file.blob.key()))
+            self.response.out.write("<LI><a href='/contents?key=%s'>Contents</a></LI>" % file.key())
+            self.response.out.write("<LI><a href='/manifest?key=%s'>Manifest</a></LI>" % file.key())
+            #self.response.out.write("<LI>%s %s</LI>" % (file.blob.size, file.blob.key()))
+            self.response.out.write("</UL><hr/>")
+
+class Manifest(blobstore_handlers.BlobstoreDownloadHandler):
+    def get(self):
+        key = self.request.get('key')
+        file = db.get(key)
+        self.response.out.write("<b>%s</b><UL>" % file.blob.filename)
+        internals = model.InternalFile.all().filter("epub = ",file)
+        for internal in internals:
+            self.response.out.write("<LI><a href='/view/%s/%s'>%s</a></LI>" % (file.key(), internal.path, internal.path))
+        self.response.out.write("</UL><hr/>")
 
 class Contents(blobstore_handlers.BlobstoreDownloadHandler):
     def get(self):
-        key = self.request.get('blob_key')
-        blob_info = blobstore.BlobInfo.get(key)
-        epub = zipfile.ZipFile(blobstore.BlobReader(key))
-        for file in epub.namelist():
-            self.response.out.write("<LI>%s</LI>" % str(file))
+        key = self.request.get('key')
+        file = db.get(key)
+        internals = model.InternalFile.all().filter("epub = ",file)
+        for internal in internals:
+            if internal.path.endswith("toc.ncx"):
+                self.response.headers['Content-Type'] = "application/xml"
+                self.response.out.write(internal.text)
 
 class Download(blobstore_handlers.BlobstoreDownloadHandler):
     def get(self):
@@ -116,7 +139,7 @@ class View(webapp.RequestHandler):
     def get(self):
         components = self.request.path.split("/")
         path = urllib.unquote_plus("/".join(components[3:]))
-        internal = model.InternalFile.all().filter("name = ",path).get()
+        internal = model.InternalFile.all().filter("path = ",path).get()
         renderer = unpack.Renderer()
         self.response.headers['Content-Type'] = renderer.contentHeader(internal)
         self.response.out.write(renderer.content(internal))
@@ -133,23 +156,21 @@ class Search(webapp.RequestHandler):
             for doc in search_results:
                 internal = db.get(doc.doc_id)
                 if internal is not None:
-                    self.response.out.write("<LI><a href='/view/%s/%s'>%s</a></LI>" % (internal.epub.key(), internal.name, internal.name))
+                    self.response.out.write("<LI><a href='/view/%s/%s'>%s</a></LI>" % (internal.epub.key(), internal.path, internal.path))
         except search.Error:
             self.response.out.write("Error")
 
-class Email(webapp.RequestHandler):
-    def get(self):
-        enforce_login(self)
-        self.response.out.write("Email here")
-
 class Share(webapp.RequestHandler):
     def get(self):
-        enforce_login(self)
         self.response.out.write("Share here")
 
-class Quote(webapp.RequestHandler):
-    def get(self):
-        self.response.out.write("Quote here")
+    def post(self):
+        enforce_login(self)
+        logging.info("paras %s" % self.request.get('paras'))
+        logging.info("epub %s" % self.request.get('epub'))
+        logging.info("file %s" % self.request.get('file'))
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.out.write('{"result":"ok","url":"TODO"}')
 
 class Edit(webapp.RequestHandler):
     def get(self):
@@ -176,20 +197,30 @@ class Account(webapp.RequestHandler):
         enforce_login(self)
         self.response.out.write("Change account")
 
+class Clear(webapp.RequestHandler):
+    def get(self):
+        if not users.is_current_user_admin():
+            self.response.out.write("No")
+            return
+        index = search.Index(name="chapters")
+        for document in index.list_documents():
+            index.remove(document.doc_id)
+
 app = webapp.WSGIApplication([
     ('/', Main),
     ('/logout', LogOut),
     ('/upload', UploadForm),
     ('/upload_complete', UploadHandler),
+    ('/index', Index),
     ('/list', List),
     ('/view/.*', View),
-    ('/edit', Edit),
     ('/contents', Contents),
+    ('/manifest', Manifest),
     ('/download', Download),
     ('/search', Search),
-    ('/email', Email),
     ('/share', Share),
-    ('/quote', Quote),
+    ('/edit', Edit),
     ('/account', Account),
+    ('/clear', Clear),
     ],
     debug=True)

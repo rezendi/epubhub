@@ -41,11 +41,21 @@ var eph_subtractPara = function(para) {
 }
 
 var eph_share = function() {
-  html = "";
-  added = added.sort();
-  $("p").each(function(index) {
-    if (added.indexOf(index)>=0)
-      html+="<p>"+$(this).html()+"</p>\n";
-  });
-  alert(html);
+  $(".eph_floater").text("...");
+  $.ajax({type: 'POST',
+		  url: '/share',
+		  dataType: 'json',
+		  data: {'paras' : JSON.stringify(added.sort()), 'epub' : epub, 'file' : file},
+		  success: onShareSuccess,
+		  error: onShareError});
+}
+
+var onShareSuccess = function(results) {
+  $(".eph_floater").remove();
+  $("p").css("background-color","");
+  alert("Shared to "+results["url"]);
+}
+
+var onShareError = function(error) {
+  alert("Error: "+error);
 }

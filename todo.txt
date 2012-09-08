@@ -1,10 +1,16 @@
-View/Share:
- Next/Prev overlays.
- Paragraph overlays.
+Share:
  Create URL from paragraph overlays.
  Link to selected URLs.
+ Highlight / show-only depending on CC/PD.
 
-Deduplicate.
+View:
+ Table of Contents.
+ Next/Prev/Up on top/bottom.
+
+Search snippets.
+
+Back-end:
+ Indexes: CC, PD, each library
  
 
 Guide:
