@@ -132,7 +132,8 @@ class Search(webapp.RequestHandler):
             search_results = index.search(query)
             for doc in search_results:
                 internal = db.get(doc.doc_id)
-                self.response.out.write("<LI><a href='/view/%s/%s'>%s</a></LI>" % (internal.epub.key(), internal.name, internal.name))
+                if internal is not None:
+                    self.response.out.write("<LI><a href='/view/%s/%s'>%s</a></LI>" % (internal.epub.key(), internal.name, internal.name))
         except search.Error:
             self.response.out.write("Error")
 
