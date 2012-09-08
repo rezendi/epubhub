@@ -94,14 +94,6 @@ class Renderer:
         return text[:sHead]+self.overlay()+text[sHead:]
 
     def overlay(self):
-        html = '<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.2.min.js"></script>\n'
-        html+= '<script type="text/javascript">\n'
-        html+= '/*<![CDATA[*/\n'
-        html+= '$(document).ready(function() {\n'
-        html+= '$("p").hover(function() { $(this).before("<span style=\'float:right;color:blue;\' class=\'floater\'>+</span>"); });\n'
-        html+= '$("p").mouseleave(function() { $(".floater").remove(); });\n'
-        html+= '$("p").click(function() { alert($(this).html()); });\n'
-        html+= '});\n'
-        html+= '/*]]>*/\n'
-        html+= '</script>\n'
+        html = '<script type="text/javascript" src="/static/jquery-1.7.2.min.js"></script>\n'
+        html+= '<script type="text/javascript" src="/static/ephubhost.js"></script>\n'
         return html
