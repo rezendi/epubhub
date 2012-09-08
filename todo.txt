@@ -1,9 +1,10 @@
-View:
+View/Share:
  Next/Prev overlays.
  Paragraph overlays.
-
-Share:
  Create URL from paragraph overlays.
+ Link to selected URLs.
+
+Deduplicate.
  
 
 Guide:
