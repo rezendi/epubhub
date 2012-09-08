@@ -98,7 +98,7 @@ class Renderer:
         html+= '<script type="text/javascript">\n'
         html+= '/*<![CDATA[*/\n'
         html+= '$(document).ready(function() {\n'
-        html+= '$("p").hover(function() { $(this).before("<span style=\'float:right;\' class=\'floater\'>+</span>"); });\n'
+        html+= '$("p").hover(function() { $(this).before("<span style=\'float:right;color:blue;\' class=\'floater\'>+</span>"); });\n'
         html+= '$("p").mouseleave(function() { $(".floater").remove(); });\n'
         html+= '$("p").click(function() { alert($(this).html()); });\n'
         html+= '});\n'
