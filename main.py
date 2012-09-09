@@ -38,6 +38,7 @@ class Main(webapp.RequestHandler):
         else:
             html+="<LI><a href='/upload'>Upload</a></LI>"
             html+="<LI><a href='/list'>My Books</a></LI>"
+            html+="<LI><a href='/quotes'>My Quotes</a></LI>"
             if account.googleUserID is None:
                 html+= "<LI><a href='%s'>Attach Google Account</a></LI>" % users.create_login_url("/")
             if account.twitterHandle is None:
@@ -161,16 +162,31 @@ class Search(webapp.RequestHandler):
             self.response.out.write("Error")
 
 class Share(webapp.RequestHandler):
-    def get(self):
-        self.response.out.write("Share here")
-
     def post(self):
-        enforce_login(self)
-        logging.info("paras %s" % self.request.get('paras'))
-        logging.info("epub %s" % self.request.get('epub'))
-        logging.info("file %s" % self.request.get('file'))
+        quote = model.Quote(
+            epub = db.get(self.request.get('epub')),
+            file = db.get(self.request.get('file')),
+            html = db.Text(self.request.get('html')),
+            user = get_current_session().get("account")
+        )
+        quote.put()
         self.response.headers['Content-Type'] = 'application/json'
-        self.response.out.write('{"result":"ok","url":"TODO"}')
+        self.response.out.write('{"result":"ok","url":"/quote/%s"}' % quote.key())
+
+class Quotes(webapp.RequestHandler):
+    def get(self):
+        user = get_current_session().get("account")
+        quotes = model.Quote.all().filter("user = ", user)
+        for quote in quotes:
+            self.response.out.write("<LI><a href='/quote/%s'>Quote</a></LI>" % quote.key())
+
+class Quote(webapp.RequestHandler):
+    def get(self):
+        components = self.request.path.split("/")
+        quote_key = urllib.unquote_plus(components[2])
+        quote = db.get(quote_key)
+        self.response.out.write(quote.html)
+
 
 class Edit(webapp.RequestHandler):
     def get(self):
@@ -219,6 +235,8 @@ app = webapp.WSGIApplication([
     ('/download', Download),
     ('/search', Search),
     ('/share', Share),
+    ('/quote/.*', Quote),
+    ('/quotes', Quotes),
     ('/edit', Edit),
     ('/account', Account),
     ('/clear', Clear),

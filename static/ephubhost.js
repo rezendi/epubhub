@@ -42,10 +42,16 @@ var eph_subtractPara = function(para) {
 
 var eph_share = function() {
   $(".eph_floater").text("...");
+  added = added.sort();
+  html = "";
+  $("p").each(function(index) {
+    if (added.indexOf(index)>=0)
+    html+="<p>"+$(this).html()+"</p>\n";
+  });
   $.ajax({type: 'POST',
 		  url: '/share',
 		  dataType: 'json',
-		  data: {'paras' : JSON.stringify(added.sort()), 'epub' : epub, 'file' : file},
+		  data: {'html' : html, 'epub' : epub, 'file' : file},
 		  success: onShareSuccess,
 		  error: onShareError});
 }
@@ -53,6 +59,7 @@ var eph_share = function() {
 var onShareSuccess = function(results) {
   $(".eph_floater").remove();
   $("p").css("background-color","");
+  added = new Array();
   alert("Shared to "+results["url"]);
 }
 

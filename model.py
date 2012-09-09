@@ -50,11 +50,10 @@ class LibraryEntry(db.Model):
   epub = db.ReferenceProperty(ePubFile)
   user = db.ReferenceProperty(Account)
 
-class Share(db.Model):
+class Quote(db.Model):
   timeCreated = db.DateTimeProperty(auto_now_add=True)
   timeEdited = db.DateTimeProperty(auto_now=True)
   epub = db.ReferenceProperty(ePubFile)
   file = db.ReferenceProperty(InternalFile)
   user = db.ReferenceProperty(Account)
-  paras = db.ListProperty(int)
-  chars = db.ListProperty(int)
+  html = db.TextProperty()

@@ -1,5 +1,6 @@
 Share:
- Create URL from paragraph overlays.
+ Save to DB.
+ Link without 
  Link to selected URLs.
  Highlight / show-only depending on CC/PD.
 
@@ -7,10 +8,9 @@ View:
  Table of Contents.
  Next/Prev/Up on top/bottom.
 
-Search snippets.
-
-Back-end:
- Indexes: CC, PD, each library
+Search display snippets.
+Search all shares?
+Indexes: CC, PD, each library
  
 
 Guide:
