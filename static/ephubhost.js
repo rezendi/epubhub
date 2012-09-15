@@ -1,4 +1,6 @@
 $(document).ready(function() {
+  $("body").prepend(getBar("top"));
+  $("body").append(getBar("bottom"));
   $("p").hover(function() {
     $(".eph_floater").remove();
     var included = added.indexOf( $("p").index($(this)) );
@@ -51,7 +53,7 @@ var eph_share = function() {
   $.ajax({type: 'POST',
 		  url: '/share',
 		  dataType: 'json',
-		  data: {'html' : html, 'epub' : epub, 'file' : file},
+		  data: {'html' : html, 'epub' : epub_file, 'file' : epub_internal},
 		  success: onShareSuccess,
 		  error: onShareError});
 }
@@ -65,4 +67,13 @@ var onShareSuccess = function(results) {
 
 var onShareError = function(error) {
   alert("Error: "+error);
+}
+
+var getBar = function(name) {
+  html = "<div style='width:100%;text-align:center;' class='epubhost-bar' id='"+name+"-epubhost-bar'>";
+  html+= "<span style='float:left;'><a href='/view/"+epub_file+"/"+epub_prev+"'>Prev</a></span>";
+  html+= "<span><a href='/'>Home</a> <a href='/contents?key="+epub_file+"'>Chapter "+epub_chapter+" of "+epub_total+" </a></span>";
+  html+= "<span style='float:right;'><a href='/view/"+epub_file+"/"+epub_next+"'>Next</a></span>";
+  html+= "</div>";
+  return html;
 }

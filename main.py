@@ -82,7 +82,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 
         unpacker = unpack.Unpacker()
         unpacker.unpack(epub)
-        taskqueue.add(url='/index', params={'key':epub.key()})
+        taskqueue.add(queue_name = 'index', url='/index', params={'key':epub.key()})
         self.redirect('/list')
 
 class Index(webapp.RequestHandler):
@@ -92,6 +92,7 @@ class Index(webapp.RequestHandler):
         internals = model.InternalFile.all().filter("epub = ",file)
         for internal in internals:
             if internal.path.endswith("html"):
+                logging.info("Indexing "+internal.path)
                 document = search.Document(
                     doc_id=str(internal.key()),
                     fields=[search.HtmlField(name="content",value=internal.text)]
@@ -124,11 +125,15 @@ class Contents(blobstore_handlers.BlobstoreDownloadHandler):
     def get(self):
         key = self.request.get('key')
         file = db.get(key)
-        internals = model.InternalFile.all().filter("epub = ",file)
-        for internal in internals:
-            if internal.path.endswith("toc.ncx"):
-                self.response.headers['Content-Type'] = "application/xml"
-                self.response.out.write(internal.text)
+        renderer = unpack.Unpacker()
+        title, navPoints = renderer.getTOC(file)
+        self.response.out.write("<H1>Table Of Contents</H1>")
+        self.response.out.write("<H2>"+title+"</H2><OL>")
+        for idx, point in enumerate(navPoints):
+            if not point.has_key("name") or point["name"] is None or len(point["name"])==0:
+                point["name"] = str(idx+1)
+            self.response.out.write("<LI><a href='/view/%s/%s'>%s</LI>" %(key, point["path"], point["name"]))
+        self.response.out.write("</OL>")
 
 class Download(blobstore_handlers.BlobstoreDownloadHandler):
     def get(self):
@@ -139,9 +144,12 @@ class Download(blobstore_handlers.BlobstoreDownloadHandler):
 class View(webapp.RequestHandler):
     def get(self):
         components = self.request.path.split("/")
+        if len(components)==4:
+            self.redirect("/contents?key="+components[2])
+            return
         path = urllib.unquote_plus("/".join(components[3:]))
         internal = model.InternalFile.all().filter("path = ",path).get()
-        renderer = unpack.Renderer()
+        renderer = unpack.Unpacker()
         self.response.headers['Content-Type'] = renderer.contentHeader(internal)
         self.response.out.write(renderer.content(internal))
 

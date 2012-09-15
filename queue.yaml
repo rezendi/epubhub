@@ -1,0 +1,16 @@
+queue:
+- name: default
+  rate: 1/s
+  max_concurrent_requests: 1
+  retry_parameters:
+    min_backoff_seconds: 300
+    task_retry_limit: 7
+    task_age_limit: 2d
+
+- name: index
+  rate: 1/s
+  max_concurrent_requests: 1
+  retry_parameters:
+    min_backoff_seconds: 300
+    task_retry_limit: 7
+    task_age_limit: 2d
