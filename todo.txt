@@ -1,10 +1,11 @@
 
-Search snippets.
-Search shares.
-Indexes: CC, PD, each library
-
+Move indexing to background.
+Give internal files names.
 Exception handling.
 Other metadata.
-Link quotes to books for PD etc.
 
 Design, design, design.
+
+Eventually:
+ Search shares.
+ Split out indexes - CC, PD, private, shares.

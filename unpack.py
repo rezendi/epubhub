@@ -102,7 +102,9 @@ class Unpacker:
         if internal.data is not None:
             return "image"
         path = internal.path
-        if path.endswith(".css") or path.endswith(".txt") or path.endswith("mimetype"):
+        if path.endswith(".css"):
+            return "text/css"
+        if path.endswith(".txt") or path.endswith("mimetype"):
             return "text/plain"
         elif path.endswith(".xml") or path.endswith(".ncx") or path.endswith(".opf"):
             return "application/xml"
@@ -123,6 +125,6 @@ class Unpacker:
         html = '<script src="/static/jquery-1.7.2.min.js"></script>\n'
         html+= '<script src="/static/ephubhost.js"></script>\n'
         chapter,total,prev,next = self.getNextPrevLinks(internal)
-        html+= '<script>var epub_chapter="%s", epub_total="%s", epub_file="%s", epub_internal="%s", epub_next="%s", epub_prev="%s"</script>\n' % (chapter, total, internal.epub.key(), internal.key(), next, prev)
+        html+= '<script>var epub_share="true", epub_title="%s", epub_chapter="%s", epub_total="%s", epub_file="%s", epub_internal="%s", epub_next="%s", epub_prev="%s"</script>\n' % (internal.epub.title, chapter, total, internal.epub.key(), internal.key(), next, prev)
         return html
     

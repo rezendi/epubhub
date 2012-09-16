@@ -10,6 +10,11 @@ indexes:
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
 
+- kind: Quote
+  properties:
+  - name: user
+  - name: epub
+
 - kind: __BlobInfo__
   properties:
   - name: size

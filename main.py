@@ -1,4 +1,4 @@
-import json, logging, urllib, zipfile
+import json, logging, urllib, re, zipfile
 from google.appengine.api import search, taskqueue, users
 from google.appengine.ext import blobstore, db, webapp
 from google.appengine.ext.webapp import blobstore_handlers
@@ -95,7 +95,7 @@ class Index(webapp.RequestHandler):
                 logging.info("Indexing "+internal.path)
                 document = search.Document(
                     doc_id=str(internal.key()),
-                    fields=[search.HtmlField(name="content",value=internal.text)]
+                    fields=[search.HtmlField(name="content",value=internal.text),search.HtmlField(name="path",value=internal.path)]
                 )
                 search.Index(name="chapters").add(document)
 
@@ -158,14 +158,18 @@ class Search(webapp.RequestHandler):
         return self.post()
 
     def post(self):
-        index = search.Index("chapters")
-        query = self.request.get('q')
+        options = search.QueryOptions(limit = 30, snippeted_fields = ['content'])
+        query = search.Query(query_string = self.request.get('q'), options=options)
         try:
+            index = search.Index("chapters")
             search_results = index.search(query)
+            self.response.out.write("<H2>%s Results</H2>" % search_results.number_found)
             for doc in search_results:
                 internal = db.get(doc.doc_id)
                 if internal is not None:
-                    self.response.out.write("<LI><a href='/view/%s/%s'>%s</a></LI>" % (internal.epub.key(), internal.path, internal.path))
+                    name = internal.path.rpartition("/")[2]
+                    self.response.out.write("<LI>%s - <a href='/view/%s/%s'>%s</a>" % (internal.epub.title, internal.epub.key(), internal.path, name))
+                    self.response.out.write("<BR/>%s" % doc.expressions[0].value)
         except search.Error:
             self.response.out.write("Error")
 
@@ -184,16 +188,25 @@ class Share(webapp.RequestHandler):
 class Quotes(webapp.RequestHandler):
     def get(self):
         user = get_current_session().get("account")
-        quotes = model.Quote.all().filter("user = ", user)
+        quotes = model.Quote.all().filter("user = ", user).order("epub")
         for quote in quotes:
-            self.response.out.write("<LI><a href='/quote/%s'>Quote</a></LI>" % quote.key())
+            html = re.sub('<[^<]+?>', '', quote.html)
+            words = html.split(" ")
+            words = words[0:6] if len(words) > 7 else words
+            text = '"'+" ".join(words)+'"'
+            self.response.out.write("<LI><i>%s</i>: <a href='/quote/%s'>%s</a></LI>" % (quote.epub.title, quote.key(), text))
 
 class Quote(webapp.RequestHandler):
     def get(self):
         components = self.request.path.split("/")
         quote_key = urllib.unquote_plus(components[2])
         quote = db.get(quote_key)
-        self.response.out.write(quote.html)
+        html = '<html><head><script src="/static/jquery-1.7.2.min.js"></script><script src="/static/ephubhost.js"></script>';
+        html+= '<script>var epub_share="false", epub_file="%s", epub_title="%s"</script>\n' % (quote.epub.key(), quote.epub.title)
+        html+='</head><body>\n'
+        html+= quote.html;
+        html+= "</body></html>"
+        self.response.out.write(html)
 
 
 class Edit(webapp.RequestHandler):

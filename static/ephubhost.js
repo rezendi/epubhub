@@ -1,20 +1,25 @@
 $(document).ready(function() {
-  $("body").prepend(getBar("top"));
-  $("body").append(getBar("bottom"));
-  $("p").hover(function() {
-    $(".eph_floater").remove();
-    var included = added.indexOf( $("p").index($(this)) );
-    var span = "";
-    if (included < 0) {
-      span = "<span class=\'eph_floater\' style=\'float:right;color:blue;\'>+</span>"
-      $(this).click(function() { eph_addPara($(this)); });
-    }
-    else {
-      span = "<span class=\'eph_floater\' style=\'float:right;color:blue;\'><a href=\'#\' style=\'text-decoration:none;\' onclick=\'eph_share();\'>SHARE THIS QUOTE</a></span>"
-      $(this).click(function() { eph_subtractPara($(this)); });
-    }
-    $(span).insertBefore($(this));
-  });
+  if (epub_share && epub_share=="true") {
+    $("body").prepend(getBar("top"));
+    $("body").append(getBar("bottom"));
+    $("p").hover(function() {
+      $(".eph_floater").remove();
+      var included = added.indexOf( $("p").index($(this)) );
+      var span = "";
+      if (included < 0) {
+        span = "<span class=\'eph_floater\' style=\'float:right;color:blue;\'>+</span>"
+        $(this).click(function() { eph_addPara($(this)); });
+      }
+      else {
+        span = "<span class=\'eph_floater\' style=\'float:right;color:blue;\'><a href=\'#\' style=\'text-decoration:none;\' onclick=\'eph_share();\'>SHARE THIS QUOTE</a></span>"
+        $(this).click(function() { eph_subtractPara($(this)); });
+      }
+      $(span).insertBefore($(this));
+    });
+  }
+  else
+    $("body").prepend(getLink("top"));
+
 });
 
 var added = new Array();
@@ -70,10 +75,19 @@ var onShareError = function(error) {
 }
 
 var getBar = function(name) {
-  html = "<div style='width:100%;text-align:center;' class='epubhost-bar' id='"+name+"-epubhost-bar'>";
+  html = "<div style='width:100%;text-align:center;background-color:lightgray;' class='epubhost-bar' id='"+name+"-epubhost-bar'>";
   html+= "<span style='float:left;'><a href='/view/"+epub_file+"/"+epub_prev+"'>Prev</a></span>";
-  html+= "<span><a href='/'>Home</a> <a href='/contents?key="+epub_file+"'>Chapter "+epub_chapter+" of "+epub_total+" </a></span>";
+  html+= "<span><a href='/'>ePubHost</a> <a href='/contents?key="+epub_file+"'>"+epub_title+", Chapter "+epub_chapter+" of "+epub_total+" </a></span>";
   html+= "<span style='float:right;'><a href='/view/"+epub_file+"/"+epub_next+"'>Next</a></span>";
+  html+= "</div>";
+  return html;
+}
+
+var getLink = function() {
+  html = "<div style='width:100%;text-align:center;background-color:lightgray;' class='epubhost-bar' id='"+name+"-epubhost-bar'>";
+  html+= "<span style='float:left;'><a href='/'>ePubHost</a></span>";
+  html+= '&nbsp;'
+  html+= "<span style='float:right;'><a href='/contents?key="+epub_file+"'>"+epub_title+"</a></span>";
   html+= "</div>";
   return html;
 }
