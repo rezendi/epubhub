@@ -10,6 +10,17 @@ indexes:
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
 
+- kind: InternalFile
+  properties:
+  - name: epub
+  - name: order
+
+- kind: InternalFile
+  properties:
+  - name: epub
+  - name: path
+  - name: order
+
 - kind: Quote
   properties:
   - name: user

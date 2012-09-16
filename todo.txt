@@ -1,11 +1,11 @@
 
 Move indexing to background.
-Give internal files names.
-Exception handling.
-Other metadata.
+Bad-data exception handling.
+Add other metadata.
+Add "license" and "index" to epub files.
+Split out indexes - CC, PD, private.
 
 Design, design, design.
 
 Eventually:
  Search shares.
- Split out indexes - CC, PD, private, shares.

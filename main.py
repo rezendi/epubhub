@@ -86,11 +86,13 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
         self.redirect('/list')
 
 class Index(webapp.RequestHandler):
+    def get(self):
+        return self.post()
+
     def post(self):
         key = self.request.get('key');
-        file = db.get(key)
-        internals = model.InternalFile.all().filter("epub = ",file)
-        for internal in internals:
+        epub = db.get(key)
+        for internal in epub.internals():
             if internal.path.endswith("html"):
                 logging.info("Indexing "+internal.path)
                 document = search.Document(
@@ -98,6 +100,13 @@ class Index(webapp.RequestHandler):
                     fields=[search.HtmlField(name="content",value=internal.text),search.HtmlField(name="path",value=internal.path)]
                 )
                 search.Index(name="chapters").add(document)
+
+class Unpack(webapp.RequestHandler):
+    def get(self):
+        key = self.request.get('key');
+        epub = db.get(key)
+        unpacker = unpack.Unpacker()
+        unpacker.unpack_internal(epub)
 
 class List(webapp.RequestHandler):
     def get(self):
@@ -116,23 +125,18 @@ class Manifest(blobstore_handlers.BlobstoreDownloadHandler):
         key = self.request.get('key')
         file = db.get(key)
         self.response.out.write("<b>%s</b><UL>" % file.blob.filename)
-        internals = model.InternalFile.all().filter("epub = ",file)
-        for internal in internals:
+        for internal in file.internals():
             self.response.out.write("<LI><a href='/view/%s/%s'>%s</a></LI>" % (file.key(), internal.path, internal.path))
         self.response.out.write("</UL><hr/>")
 
 class Contents(blobstore_handlers.BlobstoreDownloadHandler):
     def get(self):
         key = self.request.get('key')
-        file = db.get(key)
-        renderer = unpack.Unpacker()
-        title, navPoints = renderer.getTOC(file)
+        epub = db.get(key)
         self.response.out.write("<H1>Table Of Contents</H1>")
-        self.response.out.write("<H2>"+title+"</H2><OL>")
-        for idx, point in enumerate(navPoints):
-            if not point.has_key("name") or point["name"] is None or len(point["name"])==0:
-                point["name"] = str(idx+1)
-            self.response.out.write("<LI><a href='/view/%s/%s'>%s</LI>" %(key, point["path"], point["name"]))
+        self.response.out.write("<H2>"+epub.title+"</H2><OL>")
+        for internal in epub.internals(only_chapters = True):
+            self.response.out.write("<LI><a href='/view/%s/%s'>%s</LI>" %(key, internal.path, internal.name))
         self.response.out.write("</OL>")
 
 class Download(blobstore_handlers.BlobstoreDownloadHandler):
@@ -144,11 +148,16 @@ class Download(blobstore_handlers.BlobstoreDownloadHandler):
 class View(webapp.RequestHandler):
     def get(self):
         components = self.request.path.split("/")
-        if len(components)==4:
-            self.redirect("/contents?key="+components[2])
+        if len(components)>1:
+            epub_key = components[2]
+        if len(components)<4:
             return
+        if len(components)==4:
+            self.redirect("/contents?key="+epub_key)
+            return
+        epub = db.get(epub_key)
         path = urllib.unquote_plus("/".join(components[3:]))
-        internal = model.InternalFile.all().filter("path = ",path).get()
+        internal = epub.internals().filter("path = ",path).get()
         renderer = unpack.Unpacker()
         self.response.headers['Content-Type'] = renderer.contentHeader(internal)
         self.response.out.write(renderer.content(internal))
@@ -158,7 +167,7 @@ class Search(webapp.RequestHandler):
         return self.post()
 
     def post(self):
-        options = search.QueryOptions(limit = 30, snippeted_fields = ['content'])
+        options = search.QueryOptions(limit = 100, snippeted_fields = ['content'])
         query = search.Query(query_string = self.request.get('q'), options=options)
         try:
             index = search.Index("chapters")
@@ -169,7 +178,8 @@ class Search(webapp.RequestHandler):
                 if internal is not None:
                     name = internal.path.rpartition("/")[2]
                     self.response.out.write("<LI>%s - <a href='/view/%s/%s'>%s</a>" % (internal.epub.title, internal.epub.key(), internal.path, name))
-                    self.response.out.write("<BR/>%s" % doc.expressions[0].value)
+                    if (len(doc.expressions)>0): #NB doesn't work in dev environment
+                        self.response.out.write("<BR/>%s" % doc.expressions[0].value)
         except search.Error:
             self.response.out.write("Error")
 
@@ -250,6 +260,7 @@ app = webapp.WSGIApplication([
     ('/upload_complete', UploadHandler),
     ('/index', Index),
     ('/list', List),
+    ('/unpack', Unpack),
     ('/view/.*', View),
     ('/contents', Contents),
     ('/manifest', Manifest),

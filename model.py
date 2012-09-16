@@ -24,12 +24,21 @@ class ePubFile(db.Model):
   title = db.StringProperty()
   creator = db.StringProperty()
   publisher = db.StringProperty()
+  
+  def internals(self, only_chapters = False):
+    query = InternalFile.all().filter("epub = ", self)
+    if (only_chapters):
+      query = query.filter("order >",0)
+    return query.order("order")
+
 
 class InternalFile(db.Model):
   timeCreated = db.DateTimeProperty(auto_now_add=True)
   timeEdited = db.DateTimeProperty(auto_now=True)
   epub = db.ReferenceProperty(ePubFile)
   path = db.StringProperty()
+  name = db.StringProperty()
+  order = db.IntegerProperty()
   text = db.TextProperty()
   data = db.BlobProperty()
 
