@@ -22,7 +22,6 @@ class Unpacker:
             
                 #Deduplicate
                 if replaceWith is None:
-                    self.parseMetadata(epub, manifest)
                     self.unpack_internal(epub)
                 else:
                     entry = model.LibraryEntry.all().filter("epub = ", epub).get()
@@ -36,11 +35,16 @@ class Unpacker:
         zippedfile = zipfile.ZipFile(blobstore.BlobReader(epub.blob.key()))
         db.delete(epub.internals())
         for filename in zippedfile.namelist():
+            if filename.endswith("content.opf"):
+                self.parseMetadata(epub, zippedfile.read(filename))
             if filename.endswith("toc.ncx"):
                 toc_text = db.Text(zippedfile.read(filename), encoding="utf-8")
                 toc = self.getTOCFrom(toc_text)
 
-        for idx, filename in enumerate(zippedfile.namelist()):
+        index = 0
+        for filename in zippedfile.namelist():
+            if filename.endswith("html"):
+                index+=1
             logging.info("Unpacking "+filename)
             file = zippedfile.read(filename)
             name = filename.rpartition("/")[2]
@@ -48,7 +52,7 @@ class Unpacker:
             try:
                 text = db.Text(file, encoding="utf-8")
                 if toc is None:
-                    order = idx
+                    order = index if filename.endswith("html") else 0
                 else:
                     order = 0
                     for point in toc["points"]:
@@ -67,6 +71,7 @@ class Unpacker:
                 text = text,
                 data = data,
                 order = order,
+                index = index,
                 name = name
             )
             internalFile.put()
@@ -77,14 +82,27 @@ class Unpacker:
             ns = root.tag[:root.tag.rfind("}")+1] if root.tag.find("{")==0 else root.tag
             metadata = root.find(ns+"metadata")
             for child in metadata:
-                if child.tag.find("creator")>0:
-                    epub.creator = child.text
-                if child.tag.find("title")>0:
-                    epub.title = child.text
-                if child.tag.find("publisher")>0:
-                    epub.publisher = child.text
-                if child.tag.find("language")>0:
-                    epub.language = child.text
+                try:
+                    if child.tag.find("language")>0:
+                        epub.language = child.text
+                    if child.tag.find("title")>0:
+                        epub.title = child.text
+                    if child.tag.find("creator")>0:
+                        epub.creator = child.text
+                    if child.tag.find("publisher")>0:
+                        epub.publisher = child.text
+                    if child.tag.find("rights")>0:
+                        epub.rights = child.text
+                    if child.tag.find("contributor")>0:
+                        epub.contributor = child.text
+                    if child.tag.find("identifier")>0:
+                        epub.identifier = child.text
+                    if child.tag.find("description")>0:
+                        epub.description = child.text
+                    if child.tag.find("date")>0:
+                        epub.date = child.text
+                except Exception, ex:
+                    logging.error("Problem with metadata element %s: %s" % (child,ex))
             epub.put()
         except Exception, ex:
             logging.error("Metadata error: %s" % ex)
@@ -143,9 +161,15 @@ class Unpacker:
         html+= '<script src="/static/ephubhost.js"></script>\n'
         epub = selected.epub
         total = epub.internals(only_chapters=True).count()
-        next_file = None if selected.order==total else epub.internals().filter("order =",selected.order+1).get()
+
+        next_file = epub.internals().filter("order =",selected.order+1).get()
+        next_file = epub.internals().filter("order =",selected.order+2).get() if next_file is None else next_file
+        next_file = epub.internals().filter("order =",selected.order+3).get() if next_file is None else next_file
         next = next_file.path if next_file is not None else None
-        prev_file = None if selected.order==0 else epub.internals().filter("order =",selected.order-1).get()
+
+        prev_file = epub.internals().filter("order =",selected.order-1).get()
+        prev_file = epub.internals().filter("order =",selected.order-2).get() if prev_file is None else prev_file
+        prev_file = epub.internals().filter("order =",selected.order-3).get() if prev_file is None else prev_file
         prev = prev_file.path if prev_file is not None else None
         html+= '<script>var epub_share="true", epub_title="%s", epub_chapter="%s", epub_total="%s", epub_file="%s", epub_internal="%s", epub_next="%s", epub_prev="%s"</script>\n' % (epub.title, selected.order, total, epub.key(), selected.key(), next, prev)
         return html

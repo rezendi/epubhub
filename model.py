@@ -10,9 +10,7 @@ class Book(db.Model):
   ccStatus = db.IntegerProperty()
   pdStatus = db.IntegerProperty()
   language = db.StringProperty()
-  title = db.StringProperty()
   creator = db.StringProperty()
-  publisher = db.StringProperty()
 
 class ePubFile(db.Model):
   timeCreated = db.DateTimeProperty(auto_now_add=True)
@@ -24,6 +22,11 @@ class ePubFile(db.Model):
   title = db.StringProperty()
   creator = db.StringProperty()
   publisher = db.StringProperty()
+  rights = db.StringProperty()
+  contributor = db.StringProperty()
+  identifier = db.StringProperty()
+  description = db.StringProperty()
+  date = db.StringProperty()
   
   def internals(self, only_chapters = False):
     query = InternalFile.all().filter("epub = ", self)
@@ -39,6 +42,7 @@ class InternalFile(db.Model):
   path = db.StringProperty()
   name = db.StringProperty()
   order = db.IntegerProperty()
+  index = db.IntegerProperty()
   text = db.TextProperty()
   data = db.BlobProperty()
 

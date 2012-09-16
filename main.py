@@ -229,6 +229,11 @@ class Edit(webapp.RequestHandler):
         self.response.out.write("<LI>Title: %s</LI>" % ePubFile.title)
         self.response.out.write("<LI>Creator: %s</LI>" % ePubFile.creator)
         self.response.out.write("<LI>Publisher: %s</LI>" % ePubFile.publisher)
+        self.response.out.write("<LI>Rights: %s</LI>" % ePubFile.rights)
+        self.response.out.write("<LI>Contributor: %s</LI>" % ePubFile.contributor)
+        self.response.out.write("<LI>Identifier: %s</LI>" % ePubFile.identifier)
+        self.response.out.write("<LI>Description: %s</LI>" % ePubFile.description)
+        self.response.out.write("<LI>Date: %s</LI>" % ePubFile.date)
         self.response.out.write("</UL>")
 
     def post(self):

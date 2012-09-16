@@ -1,6 +1,7 @@
 
 Move indexing to background.
 Bad-data exception handling.
+Handle hashes in TOC better.
 Add other metadata.
 Add "license" and "index" to epub files.
 Split out indexes - CC, PD, private.
