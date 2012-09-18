@@ -181,7 +181,8 @@ class Search(webapp.RequestHandler):
 
     def post(self):
         options = search.QueryOptions(limit = 100, snippeted_fields = ['content'])
-        query = search.Query(query_string = self.request.get('q'), options=options)
+        query_string = "owners:%s AND (name:%s OR html:%s)" % (get_current_session().get("account"), self.request.get('q'), self.request.get('q'))
+        query = search.Query(query_string = query_string, options=options)
         try:
             index = search.Index("private")
             search_results = index.search(query)
