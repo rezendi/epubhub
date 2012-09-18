@@ -34,7 +34,12 @@ class Unpacker:
     def unpack_internal(self, epub):
         zippedfile = zipfile.ZipFile(blobstore.BlobReader(epub.blob.key()))
         db.delete(epub.internals())
+        toc = None
+        filenames = []
         for filename in zippedfile.namelist():
+            filenames.append(filename)
+        
+        for filename in sorted(filenames):
             if filename.endswith("content.opf"):
                 self.parseMetadata(epub, zippedfile.read(filename))
             if filename.endswith("toc.ncx"):
@@ -42,7 +47,8 @@ class Unpacker:
                 toc = self.getTOCFrom(toc_text)
 
         index = 0
-        for filename in zippedfile.namelist():
+        internalFiles = []
+        for filename in sorted(filenames):
             if filename.endswith("html"):
                 index+=1
             logging.info("Unpacking "+filename)
@@ -51,30 +57,37 @@ class Unpacker:
             data = None
             try:
                 text = db.Text(file, encoding="utf-8")
-                if toc is None:
+                order = index if filename.endswith("html") else 0
+                if toc is not None:
                     order = index if filename.endswith("html") else 0
-                else:
-                    order = 0
                     for point in toc["points"]:
                         path = urllib.unquote_plus(point["path"])
                         if filename.endswith(path):
                             if point["name"] is not None and len(point["name"])>0:
                                 name = point["name"]
-                            order = int(point["order"])
+                            order = int(point["order"]) if int(point["order"])>0 else index
             except Exception, ex:
+                order = 0
                 data = db.Blob(file)
 
-            #logging.info("setting order to %s for %s" % (order, name))
             internalFile = model.InternalFile(
                 epub = epub,
                 path = filename,
                 text = text,
                 data = data,
                 order = order,
-                index = index,
                 name = name
             )
-            internalFile.put()
+            internalFiles.append(internalFile)
+        
+        logging.info("Ordering %s files" % len(internalFiles))
+        count = 0
+        for internal in sorted(internalFiles, key = lambda file:file.order):
+            if internal.order > 0:
+                count+=1
+                internal.order = count
+            internal.put()
+        logging.info("Ordered %s content files" % count)
             
     def parseMetadata(self, epub, content):
         try:
@@ -163,14 +176,10 @@ class Unpacker:
         total = epub.internals(only_chapters=True).count()
 
         next_file = epub.internals().filter("order =",selected.order+1).get()
-        next_file = epub.internals().filter("order =",selected.order+2).get() if next_file is None else next_file
-        next_file = epub.internals().filter("order =",selected.order+3).get() if next_file is None else next_file
         next = next_file.path if next_file is not None else None
-
         prev_file = epub.internals().filter("order =",selected.order-1).get()
-        prev_file = epub.internals().filter("order =",selected.order-2).get() if prev_file is None else prev_file
-        prev_file = epub.internals().filter("order =",selected.order-3).get() if prev_file is None else prev_file
         prev = prev_file.path if prev_file is not None else None
+        
         html+= '<script>var epub_share="true", epub_title="%s", epub_chapter="%s", epub_total="%s", epub_file="%s", epub_internal="%s", epub_next="%s", epub_prev="%s"</script>\n' % (epub.title, selected.order, total, epub.key(), selected.key(), next, prev)
         return html
     

@@ -82,7 +82,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
 
         unpacker = unpack.Unpacker()
         unpacker.unpack(epub)
-        taskqueue.add(queue_name = 'index', url='/index', params={'key':epub.key()})
+        taskqueue.add(queue_name = 'index', url='/index', countdown=3, params={'key':epub.key()})
         self.redirect('/list')
 
 class Index(webapp.RequestHandler):
@@ -100,6 +100,8 @@ class Index(webapp.RequestHandler):
                     fields=[search.HtmlField(name="content",value=internal.text),search.HtmlField(name="path",value=internal.path)]
                 )
                 search.Index(name="chapters").add(document)
+        epub.search_index = "chapters"
+        epub.put()
 
 class Unpack(webapp.RequestHandler):
     def get(self):
@@ -114,10 +116,8 @@ class List(webapp.RequestHandler):
         for file in model.ePubFile.all():
             self.response.out.write("<b>%s</b><UL>" % file.blob.filename)
             self.response.out.write("<LI><a href='/edit?key=%s'>Metadata</a></LI>" % file.key())
-            #self.response.out.write("<LI><a href='/unpack?key=%s&blob_key=%s'>Unpack</a></LI>" % (file.key(),file.blob.key()))
             self.response.out.write("<LI><a href='/contents?key=%s'>Contents</a></LI>" % file.key())
             self.response.out.write("<LI><a href='/manifest?key=%s'>Manifest</a></LI>" % file.key())
-            #self.response.out.write("<LI>%s %s</LI>" % (file.blob.size, file.blob.key()))
             self.response.out.write("</UL><hr/>")
 
 class Manifest(blobstore_handlers.BlobstoreDownloadHandler):
@@ -151,8 +151,6 @@ class View(webapp.RequestHandler):
         if len(components)>1:
             epub_key = components[2]
         if len(components)<4:
-            return
-        if len(components)==4:
             self.redirect("/contents?key="+epub_key)
             return
         epub = db.get(epub_key)

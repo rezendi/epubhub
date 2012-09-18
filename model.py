@@ -18,6 +18,8 @@ class ePubFile(db.Model):
   book = db.ReferenceProperty(Book)
   blob = blobstore.BlobReferenceProperty()
   blob_key = db.StringProperty()
+  license = db.StringProperty()
+  search_index = db.StringProperty()
   language = db.StringProperty()
   title = db.StringProperty()
   creator = db.StringProperty()
@@ -34,7 +36,6 @@ class ePubFile(db.Model):
       query = query.filter("order >",0)
     return query.order("order")
 
-
 class InternalFile(db.Model):
   timeCreated = db.DateTimeProperty(auto_now_add=True)
   timeEdited = db.DateTimeProperty(auto_now=True)
@@ -42,7 +43,6 @@ class InternalFile(db.Model):
   path = db.StringProperty()
   name = db.StringProperty()
   order = db.IntegerProperty()
-  index = db.IntegerProperty()
   text = db.TextProperty()
   data = db.BlobProperty()
 

@@ -1,12 +1,9 @@
 
-Move indexing to background.
-Bad-data exception handling.
-Handle hashes in TOC better.
-Add other metadata.
-Add "license" and "index" to epub files.
-Split out indexes - CC, PD, private.
-
 Design, design, design.
+Bad-data exception handling.
+Test.
+Unit test.
 
 Eventually:
  Search shares.
+ Shard, split out indexes - CC, PD, private.
