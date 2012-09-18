@@ -21,7 +21,7 @@ class Main(webapp.RequestHandler):
                 account_key = session.get("account")
                 account = None if account_key is None else db.get(account_key)
             if account is None:
-                account = model.Account(googleUserID = user.user_id())
+                account = model.Account(googleUserID = user.user_id(), googleEmail = user.email())
                 account.put()
             elif account.googleUserID is None:
                 account.googleUserID = user.user_id()
@@ -75,49 +75,64 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
         upload_files = self.get_uploads('file')  # 'file' is file upload field in the form
         blob_info = upload_files[0]
 
-        epub = model.ePubFile(blob = blob_info, blob_key = str(blob_info.key()))
+        epub = model.ePubFile(blob = blob_info, blob_key = blob_info.key())
         epub.put()
         entry = model.LibraryEntry(epub = epub, user = get_current_session().get("account"))
         entry.put()
-
+        
         unpacker = unpack.Unpacker()
-        unpacker.unpack(epub)
-        taskqueue.add(queue_name = 'index', url='/index', countdown=3, params={'key':epub.key()})
-        self.redirect('/list')
+        existing, error = unpacker.unpack(epub)
 
-class Index(webapp.RequestHandler):
-    def get(self):
-        return self.post()
+        if error is None:
+            epub_key = epub.key() if existing is None else existing.key()
+            logging.info("Indexing epub with key %s" % epub_key)
+            taskqueue.add(queue_name = 'index', url='/index', countdown=2, params={
+                'key':epub_key,
+                'user':get_current_session().get("account")
+            })
+            self.redirect("/list")
+        else:
+            db.delete(entry)
+            blobstore.delete(epub.blob.key())
+            db.delete(epub)
+            error = "Invalid EPUB file" if error.find("File is not a zip")>0 else error
+            self.response.out.write("Upload error: "+error)
 
-    def post(self):
-        key = self.request.get('key');
-        epub = db.get(key)
-        for internal in epub.internals():
-            if internal.path.endswith("html"):
-                logging.info("Indexing "+internal.path)
-                document = search.Document(
-                    doc_id=str(internal.key()),
-                    fields=[search.HtmlField(name="content",value=internal.text),search.HtmlField(name="path",value=internal.path)]
-                )
-                search.Index(name="chapters").add(document)
-        epub.search_index = "chapters"
-        epub.put()
-
-class Unpack(webapp.RequestHandler):
+class UnpackInternal(webapp.RequestHandler):
     def get(self):
         key = self.request.get('key');
         epub = db.get(key)
         unpacker = unpack.Unpacker()
         unpacker.unpack_internal(epub)
 
+class Index(webapp.RequestHandler):
+    def get(self):
+        return self.post()
+
+    def post(self):
+        user = self.request.get('user')
+        key = self.request.get('key')
+        epub = db.get(key)
+        if epub is None:
+            logging.info("Unable to find epub with key %s" % key)
+            return
+        unpacker = unpack.Unpacker()
+        unpacker.index(epub, user, "private")
+        if epub.license == "Public Domain" or epub.license == "Creative Commons":
+            unpacker.index(epub, user, "public")
+        
 class List(webapp.RequestHandler):
     def get(self):
         self.response.out.write("<a href='/upload'>Upload</a><br/><hr/>")
-        for file in model.ePubFile.all():
-            self.response.out.write("<b>%s</b><UL>" % file.blob.filename)
-            self.response.out.write("<LI><a href='/edit?key=%s'>Metadata</a></LI>" % file.key())
-            self.response.out.write("<LI><a href='/contents?key=%s'>Contents</a></LI>" % file.key())
-            self.response.out.write("<LI><a href='/manifest?key=%s'>Manifest</a></LI>" % file.key())
+        account = get_current_session().get("account")
+        entries = model.LibraryEntry.all().filter("user =",db.get(account))
+        for entry in entries:
+            epub = entry.epub
+            self.response.out.write("<b>%s</b><UL>" % epub.blob.filename)
+            self.response.out.write("<LI><a href='/edit?key=%s'>Metadata</a></LI>" % epub.key())
+            self.response.out.write("<LI><a href='/contents?key=%s'>Contents</a></LI>" % epub.key())
+            self.response.out.write("<LI><a href='/manifest?key=%s'>Manifest</a></LI>" % epub.key())
+            self.response.out.write("<LI><a href='/delete?key=%s'>Delete</a></LI>" % epub.key())
             self.response.out.write("</UL><hr/>")
 
 class Manifest(blobstore_handlers.BlobstoreDownloadHandler):
@@ -168,7 +183,7 @@ class Search(webapp.RequestHandler):
         options = search.QueryOptions(limit = 100, snippeted_fields = ['content'])
         query = search.Query(query_string = self.request.get('q'), options=options)
         try:
-            index = search.Index("chapters")
+            index = search.Index("private")
             search_results = index.search(query)
             self.response.out.write("<H2>%s Results</H2>" % search_results.number_found)
             for doc in search_results:
@@ -247,12 +262,28 @@ class Account(webapp.RequestHandler):
         enforce_login(self)
         self.response.out.write("Change account")
 
+class Delete(webapp.RequestHandler):
+    def get(self):
+        confirm = self.request.get('confirm')
+        if confirm!="true":
+            return
+        epub_key = self.request.get('key')
+        account = get_current_session().get("account")
+        entry = model.LibraryEntry.all().filter("epub = ",db.get(epub_key)).filter("user =",db.get(account)).get()
+        logging.info("Got entry %s from %s and %s" % (entry, epub_key, account))
+        if entry is not None:
+            db.delete(entry)
+        self.redirect('/list')
+
 class Clear(webapp.RequestHandler):
     def get(self):
         if not users.is_current_user_admin():
             self.response.out.write("No")
             return
-        index = search.Index(name="chapters")
+        index = search.Index(name="private")
+        for document in index.list_documents():
+            index.remove(document.doc_id)
+        index = search.Index(name="public")
         for document in index.list_documents():
             index.remove(document.doc_id)
 
@@ -263,7 +294,7 @@ app = webapp.WSGIApplication([
     ('/upload_complete', UploadHandler),
     ('/index', Index),
     ('/list', List),
-    ('/unpack', Unpack),
+    ('/unpack_internal', UnpackInternal),
     ('/view/.*', View),
     ('/contents', Contents),
     ('/manifest', Manifest),
@@ -274,6 +305,7 @@ app = webapp.WSGIApplication([
     ('/quotes', Quotes),
     ('/edit', Edit),
     ('/account', Account),
-    ('/clear', Clear),
+    ('/delete', Delete),
+    ('/clearindexes', Clear),
     ],
     debug=True)

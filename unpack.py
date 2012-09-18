@@ -1,35 +1,42 @@
-import logging, urllib, xml.etree.ElementTree, zipfile
+import logging, urllib, traceback, xml.etree.ElementTree, zipfile
 from google.appengine.api import search
 from google.appengine.ext import blobstore, db
 import model
 
 class Unpacker:
     def unpack(self, epub):
-        zippedfile = zipfile.ZipFile(blobstore.BlobReader(epub.blob.key()))
-        replaceWith = None
-        toc = None
-        for filename in zippedfile.namelist():
-            thisfile = zippedfile.read(filename)
-            if filename.endswith("content.opf"):
-                manifest = thisfile
-                possible_blobs = blobstore.BlobInfo.all().filter("size = ", epub.blob.size).fetch(10)
-                for possible_blob in possible_blobs:
-                    possible_epub = model.ePubFile.all().filter("blob_key = ", str(possible_blob.key())).get()
-                    if possible_epub is not None:
-                        for internal in possible_epub.internals():
-                            if internal.path.endswith("content.opf") and internal.text==db.Text(manifest, encoding="utf-8"):
-                                replaceWith = possible_epub
+        try:
+            zippedfile = zipfile.ZipFile(blobstore.BlobReader(epub.blob))
+            replaceWith = None
+            toc = None
+            for filename in zippedfile.namelist():
+                if filename.endswith("content.opf"):
+                    manifest = zippedfile.read(filename)
+                    possible_blobs = blobstore.BlobInfo.all().filter("size = ", epub.blob.size).fetch(10)
+                    for possible_blob in possible_blobs:
+                        possible_epub = model.ePubFile.all().filter("blob = ", possible_blob.key()).get()
+                        if possible_epub is not None:
+                            for internal in possible_epub.internals():
+                                if internal.path.endswith("content.opf") and internal.text==db.Text(manifest, encoding="utf-8"):
+                                    replaceWith = possible_epub
             
-                #Deduplicate
-                if replaceWith is None:
-                    self.unpack_internal(epub)
-                else:
-                    entry = model.LibraryEntry.all().filter("epub = ", epub).get()
-                    if entry is not None:
-                        entry.epub = replaceWith
-                        entry.put()
-                        db.delete(epub)
-                        return
+            if replaceWith is None:
+                self.unpack_internal(epub)
+                return None, None
+            else: #duplicate entry found
+                logging.info("Duplicate entry found")
+                entry = model.LibraryEntry.all().filter("epub = ", epub).get()
+                if entry is not None:
+                    entry.epub = replaceWith
+                    entry.put()
+                    blobstore.delete(epub.blob.key())
+                    db.delete(epub)
+                return replaceWith, None
+
+        except Exception, ex:
+            logging.error("Unexpected error: %s" % traceback.format_exc(ex))
+            error = "Unable to unpack epub %s due to %s" % (epub, ex)
+            return None, error
 
     def unpack_internal(self, epub):
         zippedfile = zipfile.ZipFile(blobstore.BlobReader(epub.blob.key()))
@@ -54,6 +61,10 @@ class Unpacker:
             logging.info("Unpacking "+filename)
             file = zippedfile.read(filename)
             name = filename.rpartition("/")[2]
+            name = name.replace(".html","")
+            name = name.replace(".htm","")
+            name = name.rpartition(".")[0] if name.rfind(".")>0 else name
+            name = "..." if len(name)==0 else name
             data = None
             try:
                 text = db.Text(file, encoding="utf-8")
@@ -133,6 +144,29 @@ class Unpacker:
                            })
         return {"title" : title, "points" :points}
     
+    def index(self, epub, user, index_name):
+        index = search.Index(index_name)
+        for internal in epub.internals():
+            if internal.path.endswith("html"):
+                logging.info("Indexing "+internal.path)
+                internal_id = str(internal.key())
+                existing = index.list_documents(internal_id, limit=1)
+                for document in existing:
+                    if document.doc_id == internal_id:
+                        for field in document.fields:
+                            if field.name=="owners" and field.value is not None and field.value.find(user)==-1:
+                                user=field.value+"|\n|"+user
+                document = search.Document(
+                    doc_id=internal_id,
+                    fields=[
+                        search.TextField(name="owners",value=user),
+                        search.TextField(name="name",value=internal.name),
+                        search.HtmlField(name="html",value=internal.text)
+                    ]
+                )
+                index.add(document)
+
+
     def getNextPrevLinks(self, selected):
         chapter = 0
         count = 0
@@ -156,6 +190,8 @@ class Unpacker:
             return "text/plain"
         elif path.endswith(".xml") or path.endswith(".ncx") or path.endswith(".opf"):
             return "application/xml"
+        elif path.endswith(".json"):
+            return "application/json"
         return "text/html"
 
     def content(self, internal):

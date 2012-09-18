@@ -1,6 +1,7 @@
 
+Multiple creators.
+HTML templates.
 Design, design, design.
-Bad-data exception handling.
 Test.
 Unit test.
 
