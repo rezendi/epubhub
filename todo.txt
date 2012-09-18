@@ -1,5 +1,3 @@
-
-Multiple creators.
 HTML templates.
 Design, design, design.
 Test.
@@ -7,4 +5,4 @@ Unit test.
 
 Eventually:
  Search shares.
- Shard, split out indexes - CC, PD, private.
+ Multiple creators in metadata.
