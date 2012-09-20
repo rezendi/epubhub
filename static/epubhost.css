@@ -1,0 +1,13 @@
+#header {
+  background-color:#2C2C2C;
+  padding: 5px;
+  margin-bottom:5px;
+}
+
+#header a {
+  text-decoration:none;
+  color:#999;
+  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-size: 18px;
+  line-height: 20px;
+}

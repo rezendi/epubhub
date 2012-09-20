@@ -1,18 +1,15 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<head>
-    <title><!-- Insert your title here --></title>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}ePubHost.com{% endblock %}
+
+{% block content %}
     <UL>
         <LI><a href='{{login_url}}'>Log In with Google</a></LI>
         <LI><a href='/auth/twitter'>Log In with Twitter</a></LI>
         <LI><a href='/auth/facebook'>Log In with Facebook</a></LI>
     </UL>
-    <form action="/search" method="POST">
-        Search: <input type="search" name="q"><br> <input type="submit" name="submit" value="Submit">
+    <form action="/search" method="GET">
+        Search: <input type="search" name="q"> <input type="submit" name="submit" value="Submit">
         (Public Domain / Creative Commons books only)
     </form>
-</body>
-</html>
+{% endblock %}

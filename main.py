@@ -112,7 +112,6 @@ class Index(webapp.RequestHandler):
         
 class List(webapp.RequestHandler):
     def get(self):
-        self.response.out.write("<a href='/upload'>Upload</a><br/><hr/>")
         account = get_current_session().get("account")
         epubs = []
         entries = model.LibraryEntry.all().filter("user =",db.get(account))
