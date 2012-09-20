@@ -1,7 +1,7 @@
-import json, logging, urllib, re, zipfile
+import json, logging, urllib, os, re, zipfile
 from google.appengine.api import search, taskqueue, users
 from google.appengine.ext import blobstore, db, webapp
-from google.appengine.ext.webapp import blobstore_handlers
+from google.appengine.ext.webapp import blobstore_handlers, template
 from gaesessions import get_current_session
 import model, unpack
 
@@ -28,29 +28,19 @@ class Main(webapp.RequestHandler):
                 account.put()
             session["account"] = account.key()
 
-        html ="<html><body><UL>"
         account_key = session.get("account")
         account = None if account_key is None else db.get(account_key)
         if account is None:
-            html+= "<LI><a href='%s'>Log In with Google</a></LI>" % users.create_login_url("/")
-            html+= "<LI><a href='/auth/twitter'>Log In with Twitter</a></LI>"
-            html+= "<LI><a href='/auth/facebook'>Log In with Facebook</a></LI>"
+            template_values = { "login_url" : users.create_login_url("/")}
+            path = os.path.join(os.path.dirname(__file__), 'html/index.html')
+            self.response.out.write(template.render(path, template_values))
         else:
-            html+="<LI><a href='/upload'>Upload</a></LI>"
-            html+="<LI><a href='/list'>My Books</a></LI>"
-            html+="<LI><a href='/quotes'>My Quotes</a></LI>"
-            if account.googleUserID is None:
-                html+= "<LI><a href='%s'>Attach Google Account</a></LI>" % users.create_login_url("/")
-            if account.twitterHandle is None:
-                html+= "<LI><a href='/auth/twitter'>Attach Twitter Account</a></LI>"
-            if account.facebookUID is None:
-                html+= "<LI><a href='/auth/facebook'>Attach Facebook Account</a></LI>"
-            html+="<LI><a href='/logout'>Log Out</a></LI>"
-        html+= "</UL>"
-        html+='<form action="/search" method="POST">'
-        html+="""Search: <input type="search" name="q"><br> <input type="submit" name="submit" value="Submit"> </form>"""
-        html+="</html></body>"
-        self.response.out.write(html)
+            template_values = {
+                "login_url" : users.create_login_url("/"),
+                "account" : account
+            }
+            path = os.path.join(os.path.dirname(__file__), 'html/home.html')
+            self.response.out.write(template.render(path, template_values))
 
 class LogOut(webapp.RequestHandler):
     def get(self):

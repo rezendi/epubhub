@@ -1,8 +1,14 @@
 HTML templates.
 Design, design, design.
+http://stackoverflow.com/questions/4652734/return-html-from-a-user-selection/4652824#4652824
+Test DRMed ePubs.
 Test.
 Unit test.
 
 Eventually:
  Search shares.
  Multiple creators in metadata.
+
+Google Docs.
+Homepage re-skin.
+User/admin passwords for shop-dev.
