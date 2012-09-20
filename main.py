@@ -31,7 +31,7 @@ class Main(webapp.RequestHandler):
         account_key = session.get("account")
         account = None if account_key is None else db.get(account_key)
         if account is None:
-            template_values = { "login_url" : users.create_login_url("/")}
+            template_values = { "login_url" : users.create_login_url("/") }
             path = os.path.join(os.path.dirname(__file__), 'html/index.html')
             self.response.out.write(template.render(path, template_values))
         else:
@@ -54,10 +54,9 @@ class LogOut(webapp.RequestHandler):
 class UploadForm(webapp.RequestHandler):
     def get(self):
         enforce_login(self)
-        upload_url = blobstore.create_upload_url('/upload_complete')
-        self.response.out.write('<html><body>')
-        self.response.out.write('<form action="%s" method="POST" enctype="multipart/form-data">' % upload_url)
-        self.response.out.write("""Upload File: <input type="file" name="file"><br> <input type="submit" name="submit" value="Submit"> </form></body></html>""")
+        template_values = { "upload_url" : blobstore.create_upload_url('/upload_complete') }
+        path = os.path.join(os.path.dirname(__file__), 'html/upload.html')
+        self.response.out.write(template.render(path, template_values))
 
 class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
     def post(self):
@@ -115,34 +114,39 @@ class List(webapp.RequestHandler):
     def get(self):
         self.response.out.write("<a href='/upload'>Upload</a><br/><hr/>")
         account = get_current_session().get("account")
+        epubs = []
         entries = model.LibraryEntry.all().filter("user =",db.get(account))
         for entry in entries:
-            epub = entry.epub
-            self.response.out.write("<b>%s</b><UL>" % epub.blob.filename)
-            self.response.out.write("<LI><a href='/edit?key=%s'>Metadata</a></LI>" % epub.key())
-            self.response.out.write("<LI><a href='/contents?key=%s'>Contents</a></LI>" % epub.key())
-            self.response.out.write("<LI><a href='/manifest?key=%s'>Manifest</a></LI>" % epub.key())
-            self.response.out.write("<LI><a href='/delete?key=%s'>Delete</a></LI>" % epub.key())
-            self.response.out.write("</UL><hr/>")
+            epubs.append(entry.epub)
+        template_values = { "epubs" : epubs }
+        path = os.path.join(os.path.dirname(__file__), 'html/books.html')
+        self.response.out.write(template.render(path, template_values))
 
 class Manifest(blobstore_handlers.BlobstoreDownloadHandler):
     def get(self):
         key = self.request.get('key')
-        file = db.get(key)
-        self.response.out.write("<b>%s</b><UL>" % file.blob.filename)
-        for internal in file.internals():
-            self.response.out.write("<LI><a href='/view/%s/%s'>%s</a></LI>" % (file.key(), internal.path, internal.path))
-        self.response.out.write("</UL><hr/>")
+        epub = db.get(key)
+        template_values = {
+            "title" : epub.blob.filename,
+            "key" : key,
+            "files" : epub.internals(),
+            "use_name" : False
+        }
+        path = os.path.join(os.path.dirname(__file__), 'html/contents.html')
+        self.response.out.write(template.render(path, template_values))
 
 class Contents(blobstore_handlers.BlobstoreDownloadHandler):
     def get(self):
         key = self.request.get('key')
         epub = db.get(key)
-        self.response.out.write("<H1>Table Of Contents</H1>")
-        self.response.out.write("<H2>"+epub.title+"</H2><OL>")
-        for internal in epub.internals(only_chapters = True):
-            self.response.out.write("<LI><a href='/view/%s/%s'>%s</LI>" %(key, internal.path, internal.name))
-        self.response.out.write("</OL>")
+        template_values = {
+            "title" : epub.title,
+            "key" : key,
+            "files" : epub.internals(only_chapters = True),
+            "use_name" : True
+        }
+        path = os.path.join(os.path.dirname(__file__), 'html/contents.html')
+        self.response.out.write(template.render(path, template_values))
 
 class Download(blobstore_handlers.BlobstoreDownloadHandler):
     def get(self):
@@ -174,16 +178,18 @@ class Search(webapp.RequestHandler):
         query_string = "owners:%s AND (name:%s OR html:%s)" % (get_current_session().get("account"), self.request.get('q'), self.request.get('q'))
         query = search.Query(query_string = query_string, options=options)
         try:
+            results = []
             index = search.Index("private")
             search_results = index.search(query)
             self.response.out.write("<H2>%s Results</H2>" % search_results.number_found)
             for doc in search_results:
                 internal = db.get(doc.doc_id)
                 if internal is not None:
-                    name = internal.path.rpartition("/")[2]
-                    self.response.out.write("<LI>%s - <a href='/view/%s/%s'>%s</a>" % (internal.epub.title, internal.epub.key(), internal.path, name))
-                    if (len(doc.expressions)>0): #NB doesn't work in dev environment
-                        self.response.out.write("<BR/>%s" % doc.expressions[0].value)
+                    results.append({ "doc" : doc, "internal" : internal })
+
+            template_values = { "results" : results }
+            path = os.path.join(os.path.dirname(__file__), 'html/search_results.html')
+            self.response.out.write(template.render(path, template_values))
         except search.Error:
             self.response.out.write("Error")
 
@@ -203,42 +209,34 @@ class Quotes(webapp.RequestHandler):
     def get(self):
         user = get_current_session().get("account")
         quotes = model.Quote.all().filter("user = ", user).order("epub")
+        results = []
         for quote in quotes:
             html = re.sub('<[^<]+?>', '', quote.html)
             words = html.split(" ")
             words = words[0:6] if len(words) > 7 else words
             text = '"'+" ".join(words)+'"'
-            self.response.out.write("<LI><i>%s</i>: <a href='/quote/%s'>%s</a></LI>" % (quote.epub.title, quote.key(), text))
+            results.append({ "title" : quote.epub.title, "key" : quote.key(), "text" : text})
+        template_values = { "quotes" : results }
+        path = os.path.join(os.path.dirname(__file__), 'html/quotes.html')
+        self.response.out.write(template.render(path, template_values))
 
 class Quote(webapp.RequestHandler):
     def get(self):
         components = self.request.path.split("/")
         quote_key = urllib.unquote_plus(components[2])
         quote = db.get(quote_key)
-        html = '<html><head><script src="/static/jquery-1.7.2.min.js"></script><script src="/static/ephubhost.js"></script>';
-        html+= '<script>var epub_share="false", epub_file="%s", epub_title="%s"</script>\n' % (quote.epub.key(), quote.epub.title)
-        html+='</head><body>\n'
-        html+= quote.html;
-        html+= "</body></html>"
-        self.response.out.write(html)
+        template_values = { "quote" : quote }
+        path = os.path.join(os.path.dirname(__file__), 'html/quote.html')
+        self.response.out.write(template.render(path, template_values))
 
 
 class Edit(webapp.RequestHandler):
     def get(self):
-        enforce_login(self)
         key = self.request.get('key')
-        ePubFile = db.get(key)
-        self.response.out.write("<UL>")
-        self.response.out.write("<LI>Language: %s</LI>" % ePubFile.language)
-        self.response.out.write("<LI>Title: %s</LI>" % ePubFile.title)
-        self.response.out.write("<LI>Creator: %s</LI>" % ePubFile.creator)
-        self.response.out.write("<LI>Publisher: %s</LI>" % ePubFile.publisher)
-        self.response.out.write("<LI>Rights: %s</LI>" % ePubFile.rights)
-        self.response.out.write("<LI>Contributor: %s</LI>" % ePubFile.contributor)
-        self.response.out.write("<LI>Identifier: %s</LI>" % ePubFile.identifier)
-        self.response.out.write("<LI>Description: %s</LI>" % ePubFile.description)
-        self.response.out.write("<LI>Date: %s</LI>" % ePubFile.date)
-        self.response.out.write("</UL>")
+        epub = db.get(key)
+        template_values = { "epub" : epub }
+        path = os.path.join(os.path.dirname(__file__), 'html/metadata.html')
+        self.response.out.write(template.render(path, template_values))
 
     def post(self):
         enforce_login(self)
@@ -247,7 +245,12 @@ class Edit(webapp.RequestHandler):
 class Account(webapp.RequestHandler):
     def get(self):
         enforce_login(self)
-        self.response.out.write("Show account")
+        session = get_current_session()
+        account_key = session.get("account")
+        account = None if account_key is None else db.get(account_key)
+        template_values = { "account" : account }
+        path = os.path.join(os.path.dirname(__file__), 'html/account.html')
+        self.response.out.write(template.render(path, template_values))
 
     def post(self):
         enforce_login(self)
