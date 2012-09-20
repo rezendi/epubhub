@@ -1,14 +1,9 @@
-Header.
-Design, design, design.
 http://stackoverflow.com/questions/4652734/return-html-from-a-user-selection/4652824#4652824
-Test DRMed ePubs.
+Design, design, design.
+Test DRMed ePubs, Twitter/FB integration on AE.
+Unit tests.
 Test.
-Unit test.
 
 Eventually:
  Search shares.
  Multiple creators in metadata.
-
-Google Docs.
-Homepage re-skin.
-User/admin passwords for shop-dev.

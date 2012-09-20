@@ -207,7 +207,7 @@ class Unpacker:
 
     def overlay(self, selected):
         html = '<script src="/static/jquery-1.7.2.min.js"></script>\n'
-        html+= '<script src="/static/ephubhost.js"></script>\n'
+        html+= '<script src="/static/epubhost.js"></script>\n'
         epub = selected.epub
         total = epub.internals(only_chapters=True).count()
 
