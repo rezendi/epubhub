@@ -3,6 +3,7 @@
 {% block title %}ePubHost - Search Results{% endblock %}
 
 {% block content %}
+    <H2>{{result_count}} Results</H2>
     <OL>
     {% for result in results %}
         <LI>{{result.internal.epub.title}}:

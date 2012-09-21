@@ -180,13 +180,12 @@ class Search(webapp.RequestHandler):
             results = []
             index = search.Index("private")
             search_results = index.search(query)
-            self.response.out.write("<H2>%s Results</H2>" % search_results.number_found)
             for doc in search_results:
                 internal = db.get(doc.doc_id)
                 if internal is not None:
                     results.append({ "doc" : doc, "internal" : internal })
 
-            template_values = { "results" : results }
+            template_values = { "results" : results, "result_count" : search_results.number_found }
             path = os.path.join(os.path.dirname(__file__), 'html/search_results.html')
             self.response.out.write(template.render(path, template_values))
         except search.Error:

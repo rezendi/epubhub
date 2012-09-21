@@ -1,15 +1,34 @@
 {% extends "base.html" %}
 
 {% block title %}ePubHost.com{% endblock %}
-
+{% block js %}
+    <link type="text/css" rel="stylesheet" href="/static/auth-buttons.css" />
+{% endblock %}
 {% block content %}
-    <UL>
-        <LI><a href='{{login_url}}'>Log In with Google</a></LI>
-        <LI><a href='/auth/twitter'>Log In with Twitter</a></LI>
-        <LI><a href='/auth/facebook'>Log In with Facebook</a></LI>
-    </UL>
-    <form action="/search" method="GET">
-        Search: <input type="search" name="q"> <input type="submit" name="submit" value="Submit">
-        (Public Domain / Creative Commons books only)
-    </form>
+    <div class="splash_container">
+        <div class="splash login">
+            <h1>ePubHost</h1>
+            Store, search, and share your ebooks.
+        </div>
+
+        <div class="login">
+            <br/>
+            <a class="btn-auth btn-facebook large" href="/auth/facebook">Sign in with <b>Facebook</b></a>
+            <br/>
+            <br/>
+            <a class="btn-auth btn-google large" href="{{login_url}}">Sign in with <b>Google</b></a>
+            <br/>
+            <br/>
+            <a class="btn-auth btn-twitter large" href="/auth/twitter">Sign in with <b>Twitter</b></a>
+            <br/>
+            <br/>
+            <hr/>
+            <form action="/search" method="GET">
+                Search: <input type="search" name="q"> <input type="submit" name="submit" value="Go">
+                <br/>
+                (Public Domain / Creative Commons books only)
+            </form>
+        </div>
+    </div>
+    
 {% endblock %}

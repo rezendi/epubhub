@@ -1,13 +1,37 @@
 #header {
   background-color:#2C2C2C;
-  padding: 5px;
-  margin-bottom:5px;
+  padding: 8px 20px 12px;
 }
 
 #header a {
   text-decoration:none;
   color:#999;
   font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
-  font-size: 18px;
-  line-height: 20px;
+  font-size: 20px;
+  font-weight: 200;
+}
+
+.splash_container {
+  width:100%;
+}
+
+.splash {
+  margin-top:50px;
+  padding-top:20px;
+  padding-bottom:40px;
+  background-color:#EEE;
+}
+
+.splash h1 {
+  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-size: 80px;
+  color: #333;
+  margin-top:10px;
+  margin-bottom:10px;
+}
+
+.login {
+  margin-left:25%;
+  width:50%;
+  text-align:center;
 }
