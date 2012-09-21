@@ -3,15 +3,18 @@
 {% block title %}{{epub.title}} Metadata{% endblock %}
 
 {% block content %}
-    <UL>
-        <LI>Language: {{epub.language}}</LI>
-        <LI>Title: {{epub.title}}</LI>
-        <LI>Creator: {{epub.creator}}</LI>
-        <LI>Publisher: {{epub.publisher}}</LI>
-        <LI>Rights: {{epub.rights}}</LI>
-        <LI>Contributor: {{epub.contributor}}</LI>
-        <LI>Identifier: {{epub.identifier}}</LI>
-        <LI>Description: {{epub.description}}</LI>
-        <LI>Date: {{epub.date}}</LI>
-    </UL>
+    <div class="metadata_container">
+        <div class="center_div">
+            <H2>About {{epub.title}}</H2>
+        </div>
+        <div class="metadata"><span class="metakey">Language</span><span class="metavalue">{{epub.language}}</span></div>
+        <div class="metadata"><span class="metakey">Creator</span><span class="metavalue">{{epub.creator}}</span></div>
+        <div class="metadata"><span class="metakey">Publisher</span><span class="metavalue">{{epub.publisher}}</span></div>
+        <div class="metadata"><span class="metakey">Rights</span><span class="metavalue">{{epub.rights}}</span></div>
+        <div class="metadata"><span class="metakey">Contributor</span><span class="metavalue">{{epub.contributor}}</span></div>
+        <div class="metadata"><span class="metakey">Identifier</span><span class="metavalue">{{epub.identifier}}</span></div>
+        <div class="metadata"><span class="metakey">Description</span><span class="metavalue">{{epub.description}}</span></div>
+        <div class="metadata"><span class="metakey">Date</span><span class="metavalue">{{epub.date}}</span></div>
+        <div class="metadata"><span class="metakey">Uploaded</span><span class="metavalue">{{epub.timeCreated}}</span></div>
+    </div>
 {% endblock %}

@@ -31,16 +31,14 @@ class Main(webapp.RequestHandler):
         account_key = session.get("account")
         account = None if account_key is None else db.get(account_key)
         if account is None:
-            template_values = { "login_url" : users.create_login_url("/") }
+            template_values = {
+                "current_user" : get_current_session().get("account"),
+                "login_url" : users.create_login_url("/")
+            }
             path = os.path.join(os.path.dirname(__file__), 'html/index.html')
             self.response.out.write(template.render(path, template_values))
         else:
-            template_values = {
-                "login_url" : users.create_login_url("/"),
-                "account" : account
-            }
-            path = os.path.join(os.path.dirname(__file__), 'html/home.html')
-            self.response.out.write(template.render(path, template_values))
+            self.redirect('/list')
 
 class LogOut(webapp.RequestHandler):
     def get(self):
@@ -54,7 +52,10 @@ class LogOut(webapp.RequestHandler):
 class UploadForm(webapp.RequestHandler):
     def get(self):
         enforce_login(self)
-        template_values = { "upload_url" : blobstore.create_upload_url('/upload_complete') }
+        template_values = {
+            "current_user" : get_current_session().get("account"),
+            "upload_url" : blobstore.create_upload_url('/upload_complete')
+        }
         path = os.path.join(os.path.dirname(__file__), 'html/upload.html')
         self.response.out.write(template.render(path, template_values))
 
@@ -79,7 +80,8 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
                 'key':epub_key,
                 'user':get_current_session().get("account")
             })
-            self.redirect("/list")
+            epub.get_cover()
+            self.redirect("/contents?key="+str(epub_key))
         else:
             db.delete(entry)
             blobstore.delete(epub.blob.key())
@@ -112,12 +114,22 @@ class Index(webapp.RequestHandler):
         
 class List(webapp.RequestHandler):
     def get(self):
+        enforce_login(self)
         account = get_current_session().get("account")
         epubs = []
         entries = model.LibraryEntry.all().filter("user =",db.get(account))
         for entry in entries:
             epubs.append(entry.epub)
-        template_values = { "epubs" : epubs }
+        results = []
+        idx = 0
+        for epub in sorted(epubs, key = lambda epub:epub.title):
+            results.append({ 'epub' : epub, 'fourth' : idx%4==0 })
+            idx+=1
+        template_values = {
+            "current_user" : get_current_session().get("account"),
+            "upload_url" : blobstore.create_upload_url('/upload_complete'),
+            "results" : None if len(results)==0 else results
+        }
         path = os.path.join(os.path.dirname(__file__), 'html/books.html')
         self.response.out.write(template.render(path, template_values))
 
@@ -126,6 +138,7 @@ class Manifest(blobstore_handlers.BlobstoreDownloadHandler):
         key = self.request.get('key')
         epub = db.get(key)
         template_values = {
+            "current_user" : get_current_session().get("account"),
             "title" : epub.blob.filename,
             "key" : key,
             "files" : epub.internals(),
@@ -139,8 +152,10 @@ class Contents(blobstore_handlers.BlobstoreDownloadHandler):
         key = self.request.get('key')
         epub = db.get(key)
         template_values = {
-            "title" : epub.title,
+            "current_user" : get_current_session().get("account"),
             "key" : key,
+            "title" : epub.title,
+            "cover_path" : epub.cover_path,
             "files" : epub.internals(only_chapters = True),
             "use_name" : True
         }
@@ -185,7 +200,11 @@ class Search(webapp.RequestHandler):
                 if internal is not None:
                     results.append({ "doc" : doc, "internal" : internal })
 
-            template_values = { "results" : results, "result_count" : search_results.number_found }
+            template_values = {
+                "current_user" : get_current_session().get("account"),
+                "results" : results,
+                "result_count" : search_results.number_found
+            }
             path = os.path.join(os.path.dirname(__file__), 'html/search_results.html')
             self.response.out.write(template.render(path, template_values))
         except search.Error:
@@ -214,7 +233,10 @@ class Quotes(webapp.RequestHandler):
             words = words[0:6] if len(words) > 7 else words
             text = '"'+" ".join(words)+'"'
             results.append({ "title" : quote.epub.title, "key" : quote.key(), "text" : text})
-        template_values = { "quotes" : results }
+        template_values = {
+            "current_user" : get_current_session().get("account"),
+            "quotes" : results
+        }
         path = os.path.join(os.path.dirname(__file__), 'html/quotes.html')
         self.response.out.write(template.render(path, template_values))
 
@@ -223,7 +245,10 @@ class Quote(webapp.RequestHandler):
         components = self.request.path.split("/")
         quote_key = urllib.unquote_plus(components[2])
         quote = db.get(quote_key)
-        template_values = { "quote" : quote }
+        template_values = {
+            "current_user" : get_current_session().get("account"),
+            "quote" : quote
+        }
         path = os.path.join(os.path.dirname(__file__), 'html/quote.html')
         self.response.out.write(template.render(path, template_values))
 
@@ -232,7 +257,10 @@ class Edit(webapp.RequestHandler):
     def get(self):
         key = self.request.get('key')
         epub = db.get(key)
-        template_values = { "epub" : epub }
+        template_values = {
+            "current_user" : get_current_session().get("account"),
+            "epub" : epub
+        }
         path = os.path.join(os.path.dirname(__file__), 'html/metadata.html')
         self.response.out.write(template.render(path, template_values))
 
@@ -246,7 +274,10 @@ class Account(webapp.RequestHandler):
         session = get_current_session()
         account_key = session.get("account")
         account = None if account_key is None else db.get(account_key)
-        template_values = { "account" : account }
+        template_values = {
+            "current_user" : get_current_session().get("account"),
+            "account" : account
+        }
         path = os.path.join(os.path.dirname(__file__), 'html/account.html')
         self.response.out.write(template.render(path, template_values))
 

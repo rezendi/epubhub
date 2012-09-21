@@ -3,15 +3,31 @@
 {% block title %}{{title}} Contents{% endblock %}
 
 {% block content %}
-    <b>{{title}}</b>
-    <OL>
-    {% for file in files %}
-        {% if use_name %}
-        <LI><a href='/view/{{key}}/{{file.path}}'>{{file.name}}</a></LI>
-        {% else %}
-        <LI><a href='/view/{{key}}/{{file.path}}'>{{file.path}}</a></LI>
-        {% endif %}
-    {% endfor %}
-    </OL>
+    {% if use_name %}
+        <div id="book_cover">
+            <div id="contents_actions">
+                <UL>
+                    <LI><a href='/edit?key={{key}}'>About</a></LI>
+                    <LI><a href='/manifest?key={{key}}'>Manifest</a></LI>
+                    <LI><a href='/download?key={{key}}'>Download</a></LI>
+                    <LI><a href='delete?key={{key}}'>Delete</a></LI>
+                </UL>
+            </div>
+            <img class="epub_cover_thumb" src="/view/{{key}}/{{cover_path}}"/>
+        </div>
+    {% endif %}
+    <div id="book_contents">
+        <b>{{title}}</b>
+        <OL>
+        {% for file in files %}
+            {% if use_name %}
+            <LI><a href='/view/{{key}}/{{file.path}}'>{{file.name}}</a></LI>
+            {% else %}
+            <LI><a href='/view/{{key}}/{{file.path}}'>{{file.path}}</a></LI>
+            {% endif %}
+        {% endfor %}
+        </OL>
+    </div>
+    <div class="clear"></div>
     <HR/>
 {% endblock %}

@@ -1,3 +1,11 @@
+body {
+  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+.clear {
+  clear:both;
+}
+
 #header {
   background-color:#2C2C2C;
   padding: 8px 20px 12px;
@@ -6,7 +14,6 @@
 #header a {
   text-decoration:none;
   color:#999;
-  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
   font-size: 20px;
   font-weight: 200;
 }
@@ -34,4 +41,105 @@
   margin-left:25%;
   width:50%;
   text-align:center;
+}
+
+.input_field, #search_submit {
+  height:30px;
+  line-height:1.8em;
+  font-size:1.5em;
+  padding:5px;
+  margin-top:10px;
+  margin-bottom:10px;
+  border-radius:7px;
+}
+
+.input_field {
+  width:300px;
+  border: solid black 1px;
+}
+
+#search_submit {
+  width:60px;
+  height:45px;
+}
+
+#header a {
+  margin-right:20px;
+}
+
+#content {
+  padding:20px;
+}
+
+.center_div {
+  text-align:center;
+}
+
+.3_column_ul {
+  column-count:3;
+  column-gap:20px;
+}
+
+.epub_div {
+  padding:20px;
+  width:256px;
+  max-width:256px;
+  float:left;
+}
+
+.epub_cover_thumb {
+  padding:20px;
+}
+
+#epub_title {
+  font-weight:bold;
+  text-align:center;
+  height:30px;
+  max-height:30px;
+}
+
+.epub_left {
+  float:left;
+}
+
+.epub_right {
+  float:right;
+}
+
+#book_cover {
+  float:right;
+}
+
+#book_contents {
+  float:left;
+}
+
+#contents_actions {
+  text-align:center;
+}
+
+#contents_actions ul li {
+  display:inline;
+}
+
+.metadata_container {
+  width:50%;
+  margin-left:25%;
+}
+
+.metadata {
+  clear:both;
+  padding:10px;
+  margin-bottom:20px;
+}
+
+.metakey {
+  float:left;
+  font-style:italic;
+}
+
+.metavalue {
+  float:right;
+  text-align:right;
+  max-width:80%;
 }

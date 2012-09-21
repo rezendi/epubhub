@@ -1,11 +1,49 @@
 {% extends "base.html" %}
 
 {% block title %}Your Account{% endblock %}
+{% block js %}
+    <link type="text/css" rel="stylesheet" href="/static/auth-buttons.css" />
+{% endblock %}
 
 {% block content %}
-    <UL>
-        <LI>Google: {{account.googleEmail}}</LI>
-        <LI>Twitter: {{account.twitterHandle}}</LI>
-        <LI>Facebook: {{account.facebookUID}}</LI>
-    </UL>
+    <div class="metadata_container">
+        <div class="center_div">
+            <H2>Your Account</H2>
+        </div>
+        <div class="metadata">
+            <span class="metakey">Member since</span>
+            <span class="metavalue">{{account.timeCreated}}</span>
+        </div>
+        <div class="metadata">
+            <span class="metakey">Google Account</span>
+            <span class="metavalue">
+                {% if account.googleUserID %}
+                    {{account.googleEmail}}
+                {% else %}
+                    <a class="btn-auth btn-google large" href="{{login_url}}"><b>Attach</b></a>
+                {% endif %}
+            </span>
+        </div>
+        <div class="metadata">
+            <span class="metakey">Facebook Account</span>
+            <span class="metavalue">
+                {% if account.facebookUID %}
+                    {{account.facebookUID}}
+                {% else %}
+                    <a class="btn-auth btn-facebook" href="/auth/facebook"><b>Attach</b></a>
+                {% endif %}
+            </span>
+        </div>
+        <div class="metadata">
+            <span class="metakey">Twitter Account</span>
+            <span class="metavalue">
+                {% if account.twitterHandle %}
+                    {{account.twitterHandle}}
+                {% else %}
+                    <a class="btn-auth btn-twitter" href="/auth/twitter"><b>Attach</b></a>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
 {% endblock %}

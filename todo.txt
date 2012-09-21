@@ -1,9 +1,13 @@
+docTitle/text, .xml eg NoK
 http://stackoverflow.com/questions/4652734/return-html-from-a-user-selection/4652824#4652824
-Design, design, design.
+Design quotes, quote, search results.
+Edit metadata if admin or only one w/ this book.
+About page.
 Test DRMed ePubs, Twitter/FB integration on AE.
-Unit tests.
-Test.
+
 
 Eventually:
+ Get FB details.
+ Share to FB/Twitter.
  Search shares.
  Multiple creators in metadata.

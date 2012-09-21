@@ -3,15 +3,39 @@
 {% block title %}Your Books{% endblock %}
 
 {% block content %}
-    {% for epub in epubs %}
-        <b>{{epub.title}}</b>
-        <UL>
-            <LI><a href='/edit?key={{epub.key}}'>Metadata</a></LI>
-            <LI><a href='/contents?key={{epub.key}}'>Contents</a></LI>
-            <LI><a href='/manifest?key={{epub.key}}'>Manifest</a></LI>
-            <LI><a href='/download?key={{epub.blob.key}}'>Download</a></LI>
-            <LI><a href='delete?key={{epub.key}}'>Delete</a></LI>
-        </UL>
-        <HR/>
-    {% endfor %}
+    <div class="center_div">
+        <form action="/search" method="GET">
+            <input class="input_field" type="search" name="q" placeholder="Search"> <input id="search_submit" type="submit" name="submit" value="Go">
+        </form>
+    </div>
+    <HR width="50%"/>
+    {% if results %}
+        {% for result in results %}
+            {% if result.fourth %}
+                <div class="clear"/>
+            {% endif %}
+            <div class="epub_div">
+                <div id="epub_title">{{result.epub.title}}</div>
+                <div class="epub_left">
+                    <a href='/contents?key={{result.epub.key}}'>
+                        <img class="epub_cover_thumb" src="/view/{{result.epub.key}}/{{result.epub.cover_path}}" height="100"/>
+                    </a>
+                </div>
+                <div class="epub_right">
+                    <UL>
+                        <LI><a href='/edit?key={{result.epub.key}}'>About</a></LI>
+                        <LI><a href='/contents?key={{result.epub.key}}'>Contents</a></LI>
+                        <LI><a href='/manifest?key={{result.epub.key}}'>Manifest</a></LI>
+                        <LI><a href='/download?key={{result.epub.blob.key}}'>Download</a></LI>
+                        <LI><a href='delete?key={{result.epub.key}}'>Delete</a></LI>
+                    </UL>
+                </div>
+            </div>
+        {% endfor %}
+        <div class="clear"/>
+    {% else %}
+        <div class="center_div">
+        You have no books stored on ePubHost. Please use the "Upload" link above to add books.
+        </div>
+    {% endif %}
 {% endblock %}

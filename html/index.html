@@ -13,18 +13,14 @@
 
         <div class="login">
             <br/>
-            <a class="btn-auth btn-facebook large" href="/auth/facebook">Sign in with <b>Facebook</b></a>
-            <br/>
-            <br/>
-            <a class="btn-auth btn-google large" href="{{login_url}}">Sign in with <b>Google</b></a>
-            <br/>
-            <br/>
-            <a class="btn-auth btn-twitter large" href="/auth/twitter">Sign in with <b>Twitter</b></a>
-            <br/>
-            <br/>
+            <a class="btn-auth btn-facebook" href="/auth/facebook">Sign in with <b>Facebook</b></a>
+            <p/>
+            <a class="btn-auth btn-google" href="{{login_url}}">Sign in with <b>Google</b></a>
+            <p/>
+            <a class="btn-auth btn-twitter" href="/auth/twitter">Sign in with <b>Twitter</b></a>
             <hr/>
             <form action="/search" method="GET">
-                Search: <input type="search" name="q"> <input type="submit" name="submit" value="Go">
+                <input class="input_field" type="search" name="q" placeholder="Search"> <input id="search_submit" type="submit" name="submit" value="Go">
                 <br/>
                 (Public Domain / Creative Commons books only)
             </form>

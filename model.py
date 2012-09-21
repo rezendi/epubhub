@@ -17,6 +17,7 @@ class ePubFile(db.Model):
   timeEdited = db.DateTimeProperty(auto_now=True)
   book = db.ReferenceProperty(Book)
   blob = blobstore.BlobReferenceProperty()
+  cover_path = db.StringProperty()
   license = db.StringProperty()
   language = db.StringProperty()
   title = db.StringProperty()
@@ -29,11 +30,24 @@ class ePubFile(db.Model):
   date = db.StringProperty()
   
   def internals(self, only_chapters = False):
-    query = InternalFile.all().filter("epub = ", self)
+    internals = InternalFile.all().filter("epub = ", self)
     if (only_chapters):
-      query = query.filter("order >",0)
-    return query.order("order")
-
+      internals = internals.filter("order >",0)
+    return internals.order("order")
+  
+  def get_cover(self, force_recheck=False):
+    if self.cover_path is None or force_recheck:
+      internals = InternalFile.all().filter("epub = ", self)
+      potential_cover = None
+      for file in internals:
+        if file.data is not None and file.path.endswith("png") or file.path.endswith("jpg") or file.path.endswith("jpeg"):
+          if potential_cover is None or file.name.lower().find("cover") > 0 or len(file.data) > len(potential_cover.data):
+            potential_cover = file
+      if potential_cover is not None:
+        self.cover_path = potential_cover.path
+        self.put()
+    return self.cover_path
+    
 class InternalFile(db.Model):
   timeCreated = db.DateTimeProperty(auto_now_add=True)
   timeEdited = db.DateTimeProperty(auto_now=True)
@@ -43,6 +57,7 @@ class InternalFile(db.Model):
   order = db.IntegerProperty()
   text = db.TextProperty()
   data = db.BlobProperty()
+
 
 class Account(db.Model):
   timeCreated = db.DateTimeProperty(auto_now_add=True)
