@@ -197,13 +197,14 @@ class Search(webapp.RequestHandler):
         return self.post()
 
     def post(self):
-        options = search.QueryOptions(limit = 100, snippeted_fields = ['content'])
         query_string = "owners:%s AND (name:%s OR html:%s)" % (get_current_session().get("account"), self.request.get('q'), self.request.get('q'))
         book_filter = self.request.get('book_filter')
         if book_filter is not None and len(book_filter.strip())>0:
             query_string = "book:%s AND %s" % (book_filter, query_string)
         logging.info("Search query "+query_string)
-        query = search.Query(query_string = query_string, options=options)
+        sort_opts = search.SortOptions(match_scorer=search.MatchScorer())
+        opts = search.QueryOptions(limit = 100, snippeted_fields = ['content'], sort_options = sort_opts)
+        query = search.Query(query_string = query_string, options=opts)
         try:
             results = []
             index = search.Index("private")
