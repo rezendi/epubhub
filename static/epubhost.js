@@ -27,8 +27,10 @@ $(document).ready(function() {
 var added = new Array();
 
 var eph_addPara = function(para) {
-  if (htmlSelected())
+  if (htmlSelected()) {
+	addSelectedHTML();
 	return;
+  }
   var toAdd = $("p").index(para);
   for (var i=0; i<added.length; i++) {
     if (added[i]==toAdd)
@@ -49,6 +51,8 @@ var eph_subtractPara = function(para) {
   para.css("background-color","");
   $(".eph_floater").text("+");
   para.click(function() { eph_addPara($(this)); });
+  if (htmlSelected())
+	addSelectedHTML();
 }
 
 var eph_share = function() {
