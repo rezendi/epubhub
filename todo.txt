@@ -1,11 +1,13 @@
-http://stackoverflow.com/questions/4652734/return-html-from-a-user-selection/4652824#4652824
-Edit metadata if admin or only one w/ this book. (License only if admin.)
+Edit metadata if admin or only one w/ this book. License select if admin.
+Get, store FB details.
+About/help text.
+Share design.
 
 Test DRMed ePubs, Twitter/FB integration on AE.
-Get FB details.
-Share to FB/Twitter.
-About/help text.
+More design.
 
-Index shares.
-Delete shares (and index.)
-Delete books.
+Index shares. (And remove when deleted.)
+Delete books. (Entries, not epubs.)
+
+Eventually:
+ Share quote & comment to FB/Twitter.

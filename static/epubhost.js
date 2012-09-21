@@ -2,7 +2,10 @@ $(document).ready(function() {
   if (epub_share && epub_share=="true") {
     $("body").prepend(getBar("top"));
     $("body").append(getBar("bottom"));
+    $("body").mouseup(function() { addSelectedHTML(); });
     $("p").hover(function() {
+	  if (htmlSelected())
+		return;
       $(".eph_floater").remove();
       var included = added.indexOf( $("p").index($(this)) );
       var span = "";
@@ -19,12 +22,13 @@ $(document).ready(function() {
   }
   else
     $("#header").append(getLink("top"));
-
 });
 
 var added = new Array();
 
 var eph_addPara = function(para) {
+  if (htmlSelected())
+	return;
   var toAdd = $("p").index(para);
   for (var i=0; i<added.length; i++) {
     if (added[i]==toAdd)
@@ -49,12 +53,14 @@ var eph_subtractPara = function(para) {
 
 var eph_share = function() {
   $(".eph_floater").text("...");
-  added = added.sort();
-  html = "";
-  $("p").each(function(index) {
-    if (added.indexOf(index)>=0)
-    html+="<p>"+$(this).html()+"</p>\n";
-  });
+  var html = getSelectedHTML();
+  if (html.length==0) {
+	added = added.sort();
+	$("p").each(function(index) {
+	  if (added.indexOf(index)>=0)
+	  html+="<p>"+$(this).html()+"</p>\n";
+	});
+  }
   $.ajax({type: 'POST',
 		  url: '/share',
 		  dataType: 'json',
@@ -94,6 +100,18 @@ var getBar = function(name) {
 var getLink = function() {
   html = "<a style='float:right;font-weight:bold;' href='/contents?key="+epub_file+"'>"+epub_title+"</a>";
   return html;
+}
+
+var htmlSelected = function() {
+  return getSelectedHTML().length > 0;
+}
+
+var addSelectedHTML = function() {
+  if (!htmlSelected())
+	return;
+  $("p").css("background-color","");
+  added = new Array();
+  $(".eph_floater").html('<a href=\'#\' style=\'text-decoration:none;\' onclick=\'eph_share();\'>SHARE THIS QUOTE</a>');
 }
 
 var getSelectedHTML = function() {

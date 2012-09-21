@@ -7,7 +7,11 @@
     <div class="quotes">
         <OL>
             {% for quote in quotes %}
-                <LI><i>{{quote.title}}</i>: <a href='/quote/{{quote.key}}'>{{quote.text}}...</a></LI>
+                <LI>
+                    <a href='/delete_quote?key={{quote.key}}'>X</a>
+                    <i>{{quote.title}}</i>:
+                    <a href='/quote/{{quote.key}}'>{{quote.text}}...</a>
+                </LI>
             {% endfor %}
         </OL>
     </div>

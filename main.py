@@ -117,9 +117,9 @@ class Index(webapp.RequestHandler):
             logging.info("Unable to find epub with key %s" % key)
             return
         unpacker = unpack.Unpacker()
-        unpacker.index(epub, user, "private")
+        unpacker.index_epub(epub, user, "private")
         if epub.license == "Public Domain" or epub.license == "Creative Commons":
-            unpacker.index(epub, user, "public")
+            unpacker.index_epub(epub, user, "public")
         
 class List(webapp.RequestHandler):
     def get(self):
@@ -233,6 +233,8 @@ class Share(webapp.RequestHandler):
             user = get_current_session().get("account")
         )
         quote.put()
+        unpacker = unpack.Unpacker()
+        unpacker.index_quote(quote)
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write('{"result":"ok","url":"/quote/%s"}' % quote.key())
 
@@ -310,7 +312,24 @@ class Delete(webapp.RequestHandler):
         logging.info("Got entry %s from %s and %s" % (entry, epub_key, account))
         if entry is not None:
             db.delete(entry)
-        self.redirect('/list')
+            self.redirect('/list')
+        else:
+            self.response.out.write("Not permitted")
+
+class DeleteQuote(webapp.RequestHandler):
+    def get(self):
+        confirm = self.request.get('confirm')
+        if confirm!="true":
+            return
+        quote_key = self.request.get('key')
+        quote = db.get(quote_key)
+        account = get_current_session().get("account")
+        if quote.user.key() == account:
+            db.delete(quote)
+            search.Index("quotes").remove(quote_key)
+            self.redirect('/quotes')
+        else:
+            self.response.out.write("Not permitted")
 
 class Clear(webapp.RequestHandler):
     def get(self):
@@ -344,6 +363,7 @@ app = webapp.WSGIApplication([
     ('/edit', Edit),
     ('/account', Account),
     ('/delete', Delete),
+    ('/delete_quote', DeleteQuote),
     ('/clearindexes', Clear),
     ],
     debug=True)

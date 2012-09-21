@@ -152,7 +152,7 @@ class Unpacker:
                            })
         return {"title" : title, "points" :points}
     
-    def index(self, epub, user, index_name):
+    def index_epub(self, epub, user, index_name):
         index = search.Index(index_name)
         for internal in epub.internals():
             if internal.isContentFile():
@@ -175,7 +175,19 @@ class Unpacker:
                 )
                 index.add(document)
 
-
+    def index_quote(self, quote):
+        index = search.Index("quotes")
+        document = search.Document(
+            doc_id=str(quote.key()),
+            fields=[
+                search.TextField(name="user",value=str(quote.user.key())),
+                search.TextField(name="book",value=str(quote.epub.key())),
+                search.TextField(name="file",value=str(quote.file.key())),
+                search.HtmlField(name="html",value=quote.html)
+            ]
+        )
+        index.add(document)
+        
     def getNextPrevLinks(self, selected):
         chapter = 0
         count = 0
