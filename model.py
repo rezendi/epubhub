@@ -1,15 +1,10 @@
-
 import json, logging
 from google.appengine.api import datastore_errors
 from google.appengine.ext import blobstore, db
 
-#Core classes - touch with extreme caution!
 class Book(db.Model):
   timeCreated = db.DateTimeProperty(auto_now_add=True)
   timeEdited = db.DateTimeProperty(auto_now=True)
-  ccStatus = db.IntegerProperty()
-  pdStatus = db.IntegerProperty()
-  language = db.StringProperty()
   creator = db.StringProperty()
 
 class ePubFile(db.Model):
@@ -35,6 +30,12 @@ class ePubFile(db.Model):
       internals = internals.filter("order >",0)
     return internals.order("order")
   
+  def entries(self):
+    return LibraryEntry.all().filter("epub = ", self)
+  
+  def entry_count(self):
+    return LibraryEntry.all().filter("epub = ", self).count()
+  
   def get_cover(self, force_recheck=False):
     if self.cover_path is None or force_recheck:
       internals = InternalFile.all().filter("epub = ", self)
@@ -47,7 +48,8 @@ class ePubFile(db.Model):
         self.cover_path = potential_cover.path
         self.put()
     return self.cover_path
-    
+
+
 class InternalFile(db.Model):
   timeCreated = db.DateTimeProperty(auto_now_add=True)
   timeEdited = db.DateTimeProperty(auto_now=True)
@@ -73,6 +75,7 @@ class Account(db.Model):
   twitterToken = db.StringProperty()
   facebookUID = db.StringProperty()
   facebookToken = db.StringProperty()
+  facebookData = db.TextProperty()
 
 class LibraryEntry(db.Model):
   timeCreated = db.DateTimeProperty(auto_now_add=True)

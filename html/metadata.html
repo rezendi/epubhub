@@ -7,14 +7,72 @@
         <div class="center_div">
             <H2>About {{epub.title}}</H2>
         </div>
-        <div class="metadata"><span class="metakey">Language</span><span class="metavalue">{{epub.language}}</span></div>
-        <div class="metadata"><span class="metakey">Creator</span><span class="metavalue">{{epub.creator}}</span></div>
-        <div class="metadata"><span class="metakey">Publisher</span><span class="metavalue">{{epub.publisher}}</span></div>
-        <div class="metadata"><span class="metakey">Rights</span><span class="metavalue">{{epub.rights}}</span></div>
-        <div class="metadata"><span class="metakey">Contributor</span><span class="metavalue">{{epub.contributor}}</span></div>
-        <div class="metadata"><span class="metakey">Identifier</span><span class="metavalue">{{epub.identifier}}</span></div>
-        <div class="metadata"><span class="metakey">Description</span><span class="metavalue">{{epub.description}}</span></div>
-        <div class="metadata"><span class="metakey">Date</span><span class="metavalue">{{epub.date}}</span></div>
-        <div class="metadata"><span class="metakey">Uploaded</span><span class="metavalue">{{epub.timeCreated}}</span></div>
+        {% if edit or admin %}
+            <form action="/edit" method="POST">
+                <input type="hidden" name="epub_key" value="{{epub.key}}"/>
+                <div class="metadata">
+                    <span class="metakey">Language</span>
+                    <span class="metavalue"><input size=50 name="language" value="{{epub.language}}"/></span>
+                </div>
+                <div class="metadata">
+                    <span class="metakey">Creator</span>
+                    <span class="metavalue"><input size=50 name="creator" value="{{epub.creator}}"/></span>
+                </div>
+                <div class="metadata">
+                    <span class="metakey">Publisher</span>
+                    <span class="metavalue"><input size=50 name="publisher" value="{{epub.publisher}}"/></span>
+                </div>
+                <div class="metadata">
+                    <span class="metakey">Rights</span>
+                    <span class="metavalue"><input size=50 name="rights" value="{{epub.rights}}"/></span>
+                </div>
+                <div class="metadata">
+                    <span class="metakey">Contributor</span>
+                    <span class="metavalue"><input size=50 name="contributor" value="{{epub.contributor}}"/></span>
+                </div>
+                <div class="metadata">
+                    <span class="metakey">Identifier</span>
+                    <span class="metavalue"><input size=50 name="identifier" value="{{epub.identifier}}"/></span>
+                </div>
+                <div class="metadata">
+                    <span class="metakey">Description</span>
+                    <span class="metavalue"><input size=50 name="description" value="{{epub.description}}"/></span>
+                </div>
+                <div class="metadata">
+                    <span class="metakey">Date</span>
+                    <span class="metavalue"><input size=50 name="date" value="{{epub.date}}"/></span>
+                </div>
+                <div class="metadata"><span class="metakey">Uploaded</span><span class="metavalue">{{epub.timeCreated}}</span></div>
+                {% if admin %}
+                    <div class="metadata">
+                        <span class="metakey">License</span>
+                        <span class="metavalue">
+                            <select name="license">
+                                <option{{pr_license}}>Private</option>
+                                <option{{pd_license}}>Public Domain</option>
+                                <option{{cc_license}}>Creative Commons</option>
+                            </select>
+                        </span>
+                    </div>
+                {% else %}
+                <div class="metadata"><span class="metakey">License</span><span class="metavalue">{{epub.license}}</span></div>
+                {% endif %}
+                <div class="metadata">
+                    <span class="metakey">Save Changes</span>
+                    <span class="metavalue"><input type="submit" name="Save" value="Save"></span>
+                </div>
+            </form>
+        {% else %}
+            <div class="metadata"><span class="metakey">Language</span><span class="metavalue">{{epub.language}}</span></div>
+            <div class="metadata"><span class="metakey">Creator</span><span class="metavalue">{{epub.creator}}</span></div>
+            <div class="metadata"><span class="metakey">Publisher</span><span class="metavalue">{{epub.publisher}}</span></div>
+            <div class="metadata"><span class="metakey">Rights</span><span class="metavalue">{{epub.rights}}</span></div>
+            <div class="metadata"><span class="metakey">Contributor</span><span class="metavalue">{{epub.contributor}}</span></div>
+            <div class="metadata"><span class="metakey">Identifier</span><span class="metavalue">{{epub.identifier}}</span></div>
+            <div class="metadata"><span class="metakey">Description</span><span class="metavalue">{{epub.description}}</span></div>
+            <div class="metadata"><span class="metakey">Date</span><span class="metavalue">{{epub.date}}</span></div>
+            <div class="metadata"><span class="metakey">Uploaded</span><span class="metavalue">{{epub.timeCreated}}</span></div>
+            <div class="metadata"><span class="metakey">License</span><span class="metavalue">{{epub.license}}</span></div>
+        {% endif %}
     </div>
 {% endblock %}

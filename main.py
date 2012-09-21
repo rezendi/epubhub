@@ -275,14 +275,36 @@ class Edit(webapp.RequestHandler):
         epub = db.get(key)
         template_values = {
             "current_user" : get_current_session().get("account"),
-            "epub" : epub
+            "admin" : users.is_current_user_admin(),
+            "edit" : epub.entry_count()<=1,
+            "epub" : epub,
+            "pr_license" : " selected" if epub.license=="Private" else "",
+            "pd_license" : " selected" if epub.license=="Public Domain" else "",
+            "cc_license" : " selected" if epub.license=="Creative Commons" else "",
         }
         path = os.path.join(os.path.dirname(__file__), 'html/metadata.html')
         self.response.out.write(template.render(path, template_values))
 
     def post(self):
         enforce_login(self)
-        self.response.out.write("Handle edit form")
+        key = self.request.get('epub_key')
+        epub = db.get(key)
+        if not users.is_current_user_admin() and epub.entry_count()>1:
+            self.redirect("/")
+        if self.request.get('license') is not None and not users.is_current_user_admin():
+            self.redirect("/")
+        epub.language = self.request.get('language')
+        epub.title = self.request.get('title')
+        epub.creator = self.request.get('creator')
+        epub.publisher = self.request.get('publisher')
+        epub.rights = self.request.get('rights')
+        epub.contributor = self.request.get('contributor')
+        epub.identifier = self.request.get('identifier')
+        epub.description = self.request.get('description')
+        epub.date = self.request.get('date')
+        epub.license = self.request.get('license')
+        epub.put()
+        self.redirect("/contents?key="+key)
 
 class Account(webapp.RequestHandler):
     def get(self):

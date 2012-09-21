@@ -23,6 +23,10 @@
     {% endif %}
     <div id="book_contents">
         <b>{{title}}</b>
+        {% if not use_name %}
+            <br/>
+            This is an unfiltered list of every file within the ePub container.
+        {% endif %}
         <OL>
         {% for file in files %}
             {% if use_name %}

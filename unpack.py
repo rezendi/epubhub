@@ -8,8 +8,12 @@ class Unpacker:
         try:
             zippedfile = zipfile.ZipFile(blobstore.BlobReader(epub.blob))
             replaceWith = None
+            mimetype = None
             toc = None
+
             for filename in zippedfile.namelist():
+                if filename=="mimetype":
+                    mimetype = zippedfile.read(filename)
                 if filename.endswith("content.opf"):
                     manifest = zippedfile.read(filename)
                     possible_blobs = blobstore.BlobInfo.all().filter("size = ", epub.blob.size).fetch(10)
@@ -20,6 +24,9 @@ class Unpacker:
                                 if internal.path.endswith("content.opf") and internal.text==db.Text(manifest, encoding="utf-8"):
                                     replaceWith = possible_epub
             
+            if mimetype is None or mimetype.find("application/epub")==-1:
+                raise Exception("Not an EPUB file")
+
             if replaceWith is None:
                 self.unpack_internal(epub)
                 return None, None

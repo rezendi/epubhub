@@ -83,7 +83,8 @@ class FacebookCallback(webapp.RequestHandler):
         session = get_current_session()
 
         me = urllib.urlopen("https://graph.facebook.com/me?access_token="+access_token).read()
-        fbUID = json.loads(me)["id"]
+        fbJSON = json.loads(me)
+        fbUID = fbJSON["id"]
 
         account = db.GqlQuery("SELECT * FROM Account WHERE facebookUID = :1", fbUID).get()
         if account is None:
@@ -91,10 +92,12 @@ class FacebookCallback(webapp.RequestHandler):
             account = None if account_key is None else db.get(account_key)
         if account is None:
             account = model.Account()
-        account.facebookUID = fbUID
-        account.facebookToken = access_token
 
+        account.facebookToken = access_token
+        account.facebookUID = fbUID
+        account.facebookData = fbJSON
         account.put()
+
         session["account"] = account.key()
         self.redirect("/")
 

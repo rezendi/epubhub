@@ -1,5 +1,5 @@
-Edit metadata if admin or only one w/ this book. License select if admin.
-Get, store FB details.
+Show public books.
+Request make public.
 About/help text.
 Share design.
 
@@ -11,3 +11,4 @@ Delete books. (Entries, not epubs.)
 
 Eventually:
  Share quote & comment to FB/Twitter.
+ .mobi files.
