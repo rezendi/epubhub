@@ -1,13 +1,11 @@
-docTitle/text, .xml eg NoK
 http://stackoverflow.com/questions/4652734/return-html-from-a-user-selection/4652824#4652824
 Edit metadata if admin or only one w/ this book. (License only if admin.)
 
-Google Analytics.
 Test DRMed ePubs, Twitter/FB integration on AE.
 Get FB details.
 Share to FB/Twitter.
 About/help text.
 
-
-Eventually:
- Search shares.
+Index shares.
+Delete shares (and index.)
+Delete books.

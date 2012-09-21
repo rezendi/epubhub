@@ -109,7 +109,8 @@ class Index(webapp.RequestHandler):
         return self.post()
 
     def post(self):
-        user = self.request.get('user')
+        user = get_current_session().get("account")
+        user = self.request.get('user') if user is None else str(user)
         key = self.request.get('key')
         epub = db.get(key)
         if epub is None:

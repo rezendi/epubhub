@@ -26,8 +26,8 @@ class ePubFile(db.Model):
   rights = db.StringProperty()
   contributor = db.StringProperty()
   identifier = db.StringProperty()
-  description = db.StringProperty()
   date = db.StringProperty()
+  description = db.TextProperty()
   
   def internals(self, only_chapters = False):
     internals = InternalFile.all().filter("epub = ", self)
@@ -57,6 +57,9 @@ class InternalFile(db.Model):
   order = db.IntegerProperty()
   text = db.TextProperty()
   data = db.BlobProperty()
+
+  def isContentFile(self):
+    return self.path.endswith("html") or self.path.endswith("xml") and self.text.find("DOCTYPE html")>0
 
 
 class Account(db.Model):

@@ -56,21 +56,21 @@ class Unpacker:
         index = 0
         internalFiles = []
         for filename in sorted(filenames):
-            if filename.endswith("html"):
-                index+=1
             logging.info("Unpacking "+filename)
             file = zippedfile.read(filename)
-            name = filename.rpartition("/")[2]
-            name = name.replace(".html","")
-            name = name.replace(".htm","")
-            name = name.rpartition(".")[0] if name.rfind(".")>0 else name
+            isContentFile = filename.endswith("html") or filename.endswith("xml") and file.find("DOCTYPE html")>0
+            if isContentFile:
+                index+=1
+            name = filename.rpartition("/")[2] if filename.find("/") else filename
+            name = name.replace(".html","").replace(".htm","").replace(".xml","")
+            name = name.rpartition(".")[0] if name.find(".")>0 else name
             name = "..." if len(name)==0 else name
             data = None
             try:
                 text = db.Text(file, encoding="utf-8")
-                order = index if filename.endswith("html") else 0
+                order = index if isContentFile else 0
                 if toc is not None:
-                    order = index if filename.endswith("html") else 0
+                    order = index if isContentFile else 0
                     for point in toc["points"]:
                         path = urllib.unquote_plus(point["path"])
                         if filename.endswith(path):
@@ -102,7 +102,9 @@ class Unpacker:
             
     def parseMetadata(self, epub, content):
         try:
-            root = xml.etree.ElementTree.fromstring(content.encode("utf-8"))
+            to_parse = unicode(content,"utf-8",errors="ignore")
+            to_parse = to_parse.encode("utf-8")
+            root = xml.etree.ElementTree.fromstring(to_parse)
             ns = root.tag[:root.tag.rfind("}")+1] if root.tag.find("{")==0 else root.tag
             metadata = root.find(ns+"metadata")
             for child in metadata:
@@ -122,7 +124,13 @@ class Unpacker:
                     if child.tag.find("identifier")>0:
                         epub.identifier = child.text
                     if child.tag.find("description")>0:
-                        epub.description = child.text
+                        if child.text is None:
+                            epub.description = None
+                        else:
+                            description = child.text.replace("\n"," ")
+                            description = description.replace("&nbsp;"," ").replace("&amp;","&")
+                            description = description.replace("&gt;",">").replace("&lt;","<")
+                            epub.description = db.Text(description)
                     if child.tag.find("date")>0:
                         epub.date = child.text
                 except Exception, ex:
@@ -147,7 +155,7 @@ class Unpacker:
     def index(self, epub, user, index_name):
         index = search.Index(index_name)
         for internal in epub.internals():
-            if internal.path.endswith("html"):
+            if internal.isContentFile():
                 logging.info("Indexing "+internal.path)
                 internal_id = str(internal.key())
                 existing = index.list_documents(internal_id, limit=1)
@@ -184,6 +192,8 @@ class Unpacker:
     def contentHeader(self, internal):
         if internal.data is not None:
             return "image"
+        if internal.isContentFile():
+            return "text/html"
         path = internal.path
         if path.endswith(".css"):
             return "text/css"
@@ -199,7 +209,7 @@ class Unpacker:
         if internal.data is not None:
             return internal.data
         
-        if not internal.path.endswith("html"):
+        if not internal.isContentFile():
             return internal.text
 
         text = internal.text

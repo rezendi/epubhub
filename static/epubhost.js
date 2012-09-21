@@ -81,7 +81,7 @@ var getBar = function(name) {
     html = "<div style='background-color:gainsboro;margin-bottom:8px;'>";
   html+= "<a style='float:left; href='/view/"+epub_file+"/"+epub_prev+"'>Prev</a>";
   if (name=="top") {
-    html+= "<a href='/' style='margin-right:20px;'>Home</a> <a href='/contents?key="+epub_file+"'>"+epub_title+", Chapter "+epub_chapter+" of "+epub_total+" </a>";
+    html+= "<a href='/' style='margin-right:20px;'>Home</a> <a href='/contents?key="+epub_file+"'>"+epub_title+", Section "+epub_chapter+" of "+epub_total+" </a>";
 	html+= "<span style='margin-left:50px;color:#999;'>Click on or select text to share a quote</span>";
   }
   else
