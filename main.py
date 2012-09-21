@@ -11,6 +11,14 @@ def enforce_login(handler):
     if account is None:
         handler.redirect("/")
 
+class About(webapp.RequestHandler):
+    def get(self):
+        template_values = {
+            "current_user" : get_current_session().get("account"),
+        }
+        path = os.path.join(os.path.dirname(__file__), 'html/about.html')
+        self.response.out.write(template.render(path, template_values))
+
 class Main(webapp.RequestHandler):
     def get(self):
         session = get_current_session()
@@ -190,6 +198,10 @@ class Search(webapp.RequestHandler):
     def post(self):
         options = search.QueryOptions(limit = 100, snippeted_fields = ['content'])
         query_string = "owners:%s AND (name:%s OR html:%s)" % (get_current_session().get("account"), self.request.get('q'), self.request.get('q'))
+        book_filter = self.request.get('book_filter')
+        if book_filter is not None and len(book_filter.strip())>0:
+            query_string = "book:%s AND %s" % (book_filter, query_string)
+        logging.info("Search query "+query_string)
         query = search.Query(query_string = query_string, options=options)
         try:
             results = []
@@ -312,6 +324,7 @@ class Clear(webapp.RequestHandler):
 
 app = webapp.WSGIApplication([
     ('/', Main),
+    ('/about', About),
     ('/logout', LogOut),
     ('/upload', UploadForm),
     ('/upload_complete', UploadHandler),

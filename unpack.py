@@ -160,6 +160,7 @@ class Unpacker:
                     doc_id=internal_id,
                     fields=[
                         search.TextField(name="owners",value=user),
+                        search.TextField(name="book",value=str(epub.key())),
                         search.TextField(name="name",value=internal.name),
                         search.HtmlField(name="html",value=internal.text)
                     ]
@@ -206,7 +207,8 @@ class Unpacker:
         return text[:sHead]+self.overlay(internal)+text[sHead:]
 
     def overlay(self, selected):
-        html = '<script src="/static/jquery-1.7.2.min.js"></script>\n'
+        html = '<link type="text/css" rel="stylesheet" href="/static/epubhost.css" />\n'
+        html+= '<script src="/static/jquery-1.7.2.min.js"></script>\n'
         html+= '<script src="/static/epubhost.js"></script>\n'
         epub = selected.epub
         total = epub.internals(only_chapters=True).count()

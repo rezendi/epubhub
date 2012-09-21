@@ -15,6 +15,7 @@
                 <div class="clear"/>
             {% endif %}
             <div class="epub_div">
+                <div id="epub_author">{{result.epub.creator}}</div>
                 <div id="epub_title">{{result.epub.title}}</div>
                 <div class="epub_left">
                     <a href='/contents?key={{result.epub.key}}'>

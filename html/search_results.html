@@ -4,13 +4,15 @@
 
 {% block content %}
     <H2>{{result_count}} Results</H2>
-    <OL>
-    {% for result in results %}
-        <LI>{{result.internal.epub.title}}:
-        <a href='/view/{{result.internal.epub.key}}/{{result.internal.path}}'>{{result.internal.name}}</a>
-        {% for expression in result.doc.expressions %}
-            <BR/>{{expression.value}}
+    <div class="search_results">
+        <OL>
+        {% for result in results %}
+            <LI>{{result.internal.epub.title}}:
+            <a href='/view/{{result.internal.epub.key}}/{{result.internal.path}}'>{{result.internal.name}}</a>
+            {% for expression in result.doc.expressions %}
+                <div class="search_snippet">{{expression.value}}</div>
+            {% endfor %}
         {% endfor %}
-    {% endfor %}
-    </OL>
+        </OL>
+    </div>
 {% endblock %}

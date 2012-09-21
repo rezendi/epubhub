@@ -18,7 +18,7 @@ $(document).ready(function() {
     });
   }
   else
-    $("body").prepend(getLink("top"));
+    $("#header").append(getLink("top"));
 
 });
 
@@ -75,20 +75,24 @@ var onShareError = function(error) {
 }
 
 var getBar = function(name) {
-  html = "<div style='width:100%;text-align:center;background-color:lightgray;' class='epubhost-bar' id='"+name+"-epubhost-bar'>";
-  html+= "<span style='float:left;'><a href='/view/"+epub_file+"/"+epub_prev+"'>Prev</a></span>";
-  html+= "<span><a href='/'>ePubHost</a> <a href='/contents?key="+epub_file+"'>"+epub_title+", Chapter "+epub_chapter+" of "+epub_total+" </a></span>";
-  html+= "<span style='float:right;'><a href='/view/"+epub_file+"/"+epub_next+"'>Next</a></span>";
+  if (name=="top")
+    html = "<div id='eph_header' style='margin-top:8px;margin-left:2px;'>";
+  else
+    html = "<div style='background-color:gainsboro;margin-bottom:8px;'>";
+  html+= "<a style='float:left; href='/view/"+epub_file+"/"+epub_prev+"'>Prev</a>";
+  if (name=="top") {
+    html+= "<a href='/' style='margin-right:20px;'>Home</a> <a href='/contents?key="+epub_file+"'>"+epub_title+", Chapter "+epub_chapter+" of "+epub_total+" </a>";
+	html+= "<span style='margin-left:50px;color:#999;'>Click on or select text to share a quote</span>";
+  }
+  else
+	html+= "&nbsp;"
+  html+= "<a style='float:right;' href='/view/"+epub_file+"/"+epub_next+"'>Next</a>";
   html+= "</div>";
   return html;
 }
 
 var getLink = function() {
-  html = "<div style='width:100%;text-align:center;background-color:lightgray;' class='epubhost-bar' id='"+name+"-epubhost-bar'>";
-  html+= "<span style='float:left;'><a href='/'>ePubHost</a></span>";
-  html+= '&nbsp;'
-  html+= "<span style='float:right;'><a href='/contents?key="+epub_file+"'>"+epub_title+"</a></span>";
-  html+= "</div>";
+  html = "<a style='float:right;font-weight:bold;' href='/contents?key="+epub_file+"'>"+epub_title+"</a>";
   return html;
 }
 

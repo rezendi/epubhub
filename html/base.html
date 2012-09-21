@@ -8,28 +8,24 @@
 </head>
 
 <body{%block bodyjs%}{%endblock%}>
-    <div id="wrapper">
-        
-        <div id="header">
-            <a href="/">ePubHost</a>
-            {% if current_user %}
-                <a href="/upload">Upload Books</a>
-                <a href="/list">My Books</a>
-                <a href="/quotes">My Quotes</a>
-                <a href="/account">My Account</a>
-                <a href="/logout" style="float:right;">Log Out</a>
-            {% endif %}
-            <a href="/about" style="float:right;">About</a>
-        </div>
-
-        <div id="content">
-            {% block content %}{% endblock %}
-        </div>
-
-        <div id="footer">
-        </div>
+    <div id="eph_header">
+        <a href="/">ePubHost</a>
+        {% if current_user %}
+            <a href="/upload">Upload Books</a>
+            <a href="/list">My Books</a>
+            <a href="/quotes">My Quotes</a>
+            <a href="/account">My Account</a>
+            <a href="/logout" style="float:right;">Log Out</a>
+        {% endif %}
+        <a href="/about" style="float:right;">About</a>
     </div>
 
+    <div id="eph_content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <div id="eph_footer">
+    </div>
 {%block js2%}{%endblock%}
 </body>
 </html>

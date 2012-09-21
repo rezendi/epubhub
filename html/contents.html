@@ -11,7 +11,12 @@
                     <LI><a href='/manifest?key={{key}}'>Manifest</a></LI>
                     <LI><a href='/download?key={{key}}'>Download</a></LI>
                     <LI><a href='delete?key={{key}}'>Delete</a></LI>
-                </UL>
+                    </UL>
+                <form action="/search" method="GET">
+                    <input type="hidden" name="book_filter" value="{{key}}"/>
+                    <input type="search" name="q" placeholder="Search">
+                    <input type="submit" name="submit" value="Go">
+                </form>
             </div>
             <img class="epub_cover_thumb" src="/view/{{key}}/{{cover_path}}"/>
         </div>

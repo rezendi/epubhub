@@ -3,9 +3,12 @@
 {% block title %}ePubHost - Your Quotes{% endblock %}
 
 {% block content %}
-    <OL>
-        {% for quote in quotes %}
-            <LI><i>{{quote.title}}</i>: <a href='/quote/{{quote.key}}'>{{quote.text}}</a></LI>
-        {% endfor %}
-    </OL>
+    <H2>Your Quotes</H2>
+    <div class="quotes">
+        <OL>
+            {% for quote in quotes %}
+                <LI><i>{{quote.title}}</i>: <a href='/quote/{{quote.key}}'>{{quote.text}}...</a></LI>
+            {% endfor %}
+        </OL>
+    </div>
 {% endblock %}
