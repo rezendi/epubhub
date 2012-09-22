@@ -75,7 +75,8 @@ class Account(db.Model):
   twitterToken = db.StringProperty()
   facebookUID = db.StringProperty()
   facebookToken = db.StringProperty()
-  facebookData = db.TextProperty()
+  facebookInfo = db.TextProperty()
+  facebookInterests = db.TextProperty()
 
 class LibraryEntry(db.Model):
   timeCreated = db.DateTimeProperty(auto_now_add=True)

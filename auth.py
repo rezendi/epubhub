@@ -15,7 +15,7 @@ class RegisterTwitter(webapp.RequestHandler):
     def get(self):
         auth = tweepy.OAuthHandler(TWITTER_CONSUMER_KEY,
                                    TWITTER_CONSUMER_SECRET,
-                                   "https://epubhost.appspot.com/auth/twitter/callback")
+                                   "http://www.epubhost.com/auth/twitter/callback")
 
         try:
             redirect_url = auth.get_authorization_url()
@@ -54,7 +54,7 @@ class TwitterCallback(webapp.RequestHandler):
             account_key = session.get("account")
             account = None if account_key is None else db.get(account_key)
         if account is None:
-            account = model.Account
+            account = model.Account()
         account.twitterHandle = twitterUsername
         account.twitterKey = auth.access_token.key
         account.twitterToken = auth.access_token.secret
@@ -66,13 +66,13 @@ class TwitterCallback(webapp.RequestHandler):
 class RegisterFacebook(webapp.RequestHandler):
     def get(self):
         args = dict(client_id=FACEBOOK_APP_ID,
-                    redirect_uri="https://epubhost.appspot.com/auth/facebook/callback",
+                    redirect_uri="http://www.epubhost.com/auth/facebook/callback",
                     scope="email,user_about_me,user_education_history,user_interests,user_likes")
         self.redirect( "https://graph.facebook.com/oauth/authorize?" + urllib.urlencode(args))
 
 class FacebookCallback(webapp.RequestHandler):
     def get(self):
-        args = dict(client_id=FACEBOOK_APP_ID, redirect_uri="https://epubhost.appspot.com/auth/facebook/callback")
+        args = dict(client_id=FACEBOOK_APP_ID, redirect_uri="http://www.epubhost.com/auth/facebook/callback")
         args["client_secret"] = FACEBOOK_SECRET
         args["code"] = self.request.get("code")
         response = cgi.parse_qs(urllib.urlopen(
@@ -83,8 +83,8 @@ class FacebookCallback(webapp.RequestHandler):
         session = get_current_session()
 
         me = urllib.urlopen("https://graph.facebook.com/me?access_token="+access_token).read()
-        fbJSON = json.loads(me)
-        fbUID = fbJSON["id"]
+        fbData = json.loads(me)
+        fbUID = fbData["id"]
 
         account = db.GqlQuery("SELECT * FROM Account WHERE facebookUID = :1", fbUID).get()
         if account is None:
@@ -95,7 +95,11 @@ class FacebookCallback(webapp.RequestHandler):
 
         account.facebookToken = access_token
         account.facebookUID = fbUID
-        account.facebookData = fbJSON
+        try:
+            account.facebookInfo = json.dumps(fbData)
+            account.facebookInterests = json.dumps(urllib.urlopen("https://graph.facebook.com/me/interests?access_token="+access_token).read())
+        except Exception, ex:
+            logging.info("Couldn't get/save FB data due to %s" % ex)
         account.put()
 
         session["account"] = account.key()

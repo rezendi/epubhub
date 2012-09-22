@@ -20,7 +20,7 @@
                 {% if account.googleUserID %}
                     {{account.googleEmail}}
                 {% else %}
-                    <a class="btn-auth btn-google large" href="{{login_url}}"><b>Attach</b></a>
+                    <a class="btn-auth btn-google" href="{{login_url}}"><b>Attach</b></a>
                 {% endif %}
             </span>
         </div>
@@ -28,7 +28,7 @@
             <span class="metakey">Facebook Account</span>
             <span class="metavalue">
                 {% if account.facebookUID %}
-                    {{account.facebookData}}
+                    {{fbName}}
                 {% else %}
                     <a class="btn-auth btn-facebook" href="/auth/facebook"><b>Attach</b></a>
                 {% endif %}

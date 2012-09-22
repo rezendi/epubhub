@@ -314,7 +314,8 @@ class Account(webapp.RequestHandler):
         account = None if account_key is None else db.get(account_key)
         template_values = {
             "current_user" : get_current_session().get("account"),
-            "account" : account
+            "account" : account,
+            "fbName" : "n/a" if account.facebookInfo is None else json.loads(account.facebookInfo)["name"]
         }
         path = os.path.join(os.path.dirname(__file__), 'html/account.html')
         self.response.out.write(template.render(path, template_values))

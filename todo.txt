@@ -3,7 +3,7 @@ Request make public.
 About/help text.
 Share design.
 
-Test DRMed ePubs, Twitter/FB integration on AE.
+Test DRMed ePubs.
 More design.
 
 Index shares. (And remove when deleted.)
