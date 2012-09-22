@@ -4,10 +4,10 @@ About/help text.
 Share design.
 
 Test DRMed ePubs.
-More design.
+Design go-over.
 
-Index shares. (And remove when deleted.)
-Delete books. (Entries, not epubs.)
+UI for book, share deletion.
+Delete owner index when book entry deleted.
 
 Eventually:
  Share quote & comment to FB/Twitter.

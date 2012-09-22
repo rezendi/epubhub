@@ -97,7 +97,7 @@ class FacebookCallback(webapp.RequestHandler):
         account.facebookUID = fbUID
         try:
             account.facebookInfo = json.dumps(fbData)
-            account.facebookInterests = json.dumps(urllib.urlopen("https://graph.facebook.com/me/interests?access_token="+access_token).read())
+            account.facebookInterests = urllib.urlopen("https://graph.facebook.com/me/interests?access_token="+access_token).read()
         except Exception, ex:
             logging.info("Couldn't get/save FB data due to %s" % ex)
         account.put()
