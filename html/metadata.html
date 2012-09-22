@@ -15,6 +15,10 @@
                     <span class="metavalue"><input size=50 name="language" value="{{epub.language}}"/></span>
                 </div>
                 <div class="metadata">
+                    <span class="metakey">Title</span>
+                    <span class="metavalue"><input size=50 name="title" value="{{epub.title}}"/></span>
+                </div>
+                <div class="metadata">
                     <span class="metakey">Creator</span>
                     <span class="metavalue"><input size=50 name="creator" value="{{epub.creator}}"/></span>
                 </div>
@@ -55,7 +59,15 @@
                         </span>
                     </div>
                 {% else %}
-                <div class="metadata"><span class="metakey">License</span><span class="metavalue">{{epub.license}}</span></div>
+                <div class="metadata">
+                    <span class="metakey">License</span>
+                    <span class="metavalue">
+                        {{epub.license}}
+                        {% if epub.license == 'Private' %}
+                            <br/><a href="/request?key={{epub.key}}">Request that this book be made public</a>
+                        {% endif %}
+                    </span>
+                </div>
                 {% endif %}
                 <div class="metadata">
                     <span class="metakey">Save Changes</span>

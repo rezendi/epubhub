@@ -1,7 +1,5 @@
-Show public books.
-Request make public.
-About/help text.
 Share design.
+About/help text.
 
 Test DRMed ePubs.
 Design go-over.

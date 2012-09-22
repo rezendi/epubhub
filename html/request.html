@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}ePubHost - Upload{% endblock %}
+
+{% block content %}
+
+<div class="middle">
+    <H2>Request Public Access</H2>
+    We need to ensure that only books which we have verified are Creative Commons or Public Domain be made public.
+    Please enter any supporting data - eg URLs, email addresses to check with, etc - regarding this book's licensing.
+    (Max 500 characters.)
+    
+    <form method="POST" action="/request">
+        <input type="hidden" name="epub_key" value="{{epub_key}}"/>
+        <br/>
+        <textarea name="support" cols=50 rows=8></textarea>
+        <br/>
+        <input type="submit" name="submit" value="Submit Request">
+    </form>
+</div>
+{% endblock %}

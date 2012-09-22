@@ -11,6 +11,14 @@ def enforce_login(handler):
     if account is None:
         handler.redirect("/")
 
+def respondWithMessage(handler, message):
+    template_values = {
+        "current_user" : get_current_session().get("account"),
+        "message" : message
+    }
+    path = os.path.join(os.path.dirname(__file__), 'html/message.html')
+    handler.response.out.write(template.render(path, template_values))
+
 class About(webapp.RequestHandler):
     def get(self):
         template_values = {
@@ -95,7 +103,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
             blobstore.delete(epub.blob.key())
             db.delete(epub)
             error = "Invalid EPUB file" if error.find("File is not a zip")>0 else error
-            self.response.out.write("Upload error: "+error)
+            respondWithMessage(self, "Upload error: "+error)
 
 class UnpackInternal(webapp.RequestHandler):
     def get(self):
@@ -123,12 +131,15 @@ class Index(webapp.RequestHandler):
         
 class List(webapp.RequestHandler):
     def get(self):
-        enforce_login(self)
         account = get_current_session().get("account")
-        epubs = []
-        entries = model.LibraryEntry.all().filter("user =",db.get(account))
-        for entry in entries:
-            epubs.append(entry.epub)
+        if account is None or self.request.get('show')=="public":
+            epubs = model.ePubFile.all().filter("license IN",["Public Domain","Creative Commons"])
+        else:
+            epubs = []
+            entries = model.LibraryEntry.all().filter("user =",db.get(account))
+            for entry in entries:
+                epubs.append(entry.epub)
+
         results = []
         idx = 0
         for epub in sorted(epubs, key = lambda epub:epub.title):
@@ -222,7 +233,7 @@ class Search(webapp.RequestHandler):
             path = os.path.join(os.path.dirname(__file__), 'html/search_results.html')
             self.response.out.write(template.render(path, template_values))
         except search.Error:
-            self.response.out.write("Error")
+            respondWithMessage(self, "Search error")
 
 class Share(webapp.RequestHandler):
     def post(self):
@@ -324,6 +335,28 @@ class Account(webapp.RequestHandler):
         enforce_login(self)
         self.response.out.write("Change account")
 
+class Request(webapp.RequestHandler):
+    def get(self):
+        enforce_login(self)
+        key = self.request.get('key')
+        template_values = {
+            "current_user" : get_current_session().get("account"),
+            "epub_key" : key,
+        }
+        path = os.path.join(os.path.dirname(__file__), 'html/request.html')
+        self.response.out.write(template.render(path, template_values))
+
+    def post(self):
+        enforce_login(self)
+        epub_key = self.request.get('epub_key')
+        public_request = model.PublicRequest(
+            epub = db.get(epub_key),
+            user = db.get(get_current_session().get("account")),
+        )
+        public_request.supporting_data = self.request.get('support').replace("\n","<br/>")
+        public_request.put()
+        respondWithMessage(self, "Thank you! We have received your request.")
+
 class Delete(webapp.RequestHandler):
     def get(self):
         confirm = self.request.get('confirm')
@@ -373,6 +406,7 @@ app = webapp.WSGIApplication([
     ('/upload', UploadForm),
     ('/upload_complete', UploadHandler),
     ('/index', Index),
+    ('/books', List),
     ('/list', List),
     ('/unpack_internal', UnpackInternal),
     ('/view/.*', View),
@@ -380,6 +414,7 @@ app = webapp.WSGIApplication([
     ('/manifest', Manifest),
     ('/download', Download),
     ('/search', Search),
+    ('/request', Request),
     ('/share', Share),
     ('/quote/.*', Quote),
     ('/quotes', Quotes),

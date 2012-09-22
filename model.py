@@ -91,3 +91,10 @@ class Quote(db.Model):
   file = db.ReferenceProperty(InternalFile)
   user = db.ReferenceProperty(Account)
   html = db.TextProperty()
+
+class PublicRequest(db.Model):
+  timeCreated = db.DateTimeProperty(auto_now_add=True)
+  timeEdited = db.DateTimeProperty(auto_now=True)
+  epub = db.ReferenceProperty(ePubFile)
+  user = db.ReferenceProperty(Account)
+  supporting_data = db.StringProperty()
