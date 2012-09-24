@@ -159,7 +159,7 @@ class Unpacker:
                            })
         return {"title" : title, "points" :points}
     
-    def index_epub(self, epub, user, index_name):
+    def index_epub(self, epub, index_name, user=None):
         index = search.Index(index_name)
         for internal in epub.internals():
             if internal.isContentFile():
@@ -170,14 +170,14 @@ class Unpacker:
                     if document.doc_id == internal_id:
                         for field in document.fields:
                             if field.name=="owners" and field.value is not None and field.value.find(user)==-1:
-                                user=field.value+"|\n|"+user
+                                user = field.value if user is None else +"|\n|"+user
                 document = search.Document(
                     doc_id=internal_id,
                     fields=[
-                        search.TextField(name="owners",value=user),
-                        search.TextField(name="book",value=str(epub.key())),
-                        search.TextField(name="name",value=internal.name),
-                        search.HtmlField(name="html",value=internal.text)
+                        search.TextField(name="owners", value="public" if user is None else user),
+                        search.TextField(name="book", value=str(epub.key())),
+                        search.TextField(name="name", value=internal.name),
+                        search.HtmlField(name="html", value=internal.text)
                     ]
                 )
                 index.add(document)

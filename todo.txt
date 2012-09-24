@@ -1,6 +1,7 @@
+Public-domain list.
 About/help text.
 Test DRMed ePubs.
-Design go-over: IE, etc.
+Final once-over.
 
 Eventually:
  Share quote & comment to FB/Twitter.

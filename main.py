@@ -125,9 +125,9 @@ class Index(webapp.RequestHandler):
             logging.info("Unable to find epub with key %s" % key)
             return
         unpacker = unpack.Unpacker()
-        unpacker.index_epub(epub, user, "private")
+        unpacker.index_epub(epub, "private", user)
         if epub.license == "Public Domain" or epub.license == "Creative Commons":
-            unpacker.index_epub(epub, user, "public")
+            unpacker.index_epub(epub, "public")
         
 class List(webapp.RequestHandler):
     def get(self):
@@ -321,6 +321,20 @@ class Edit(webapp.RequestHandler):
         epub.identifier = self.request.get('identifier')
         epub.description = self.request.get('description')
         epub.date = self.request.get('date')
+
+        license = self.request.get('license')
+        if epub.license != license:
+            if license=="Public Domain" or license=="Creative Commons":
+                unpacker = unpack.Unpacker()
+                unpacker.index_epub(epub, "public")
+            else:
+                index = search.Index("public")
+                opts = search.QueryOptions(limit = 1000, ids_only = True)
+                query = search.Query(query_string = "book:%s" % epub.key(), options=opts)
+                docs = index.search(query)
+                for doc in docs:
+                    index.remove(doc.doc_id)
+
         epub.license = self.request.get('license')
         epub.put()
         self.redirect("/book/"+str(epub.key.id()))
