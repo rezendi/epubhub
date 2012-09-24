@@ -1,3 +1,5 @@
+Prevent viewing of others' book contents.
+Attribution, link to book on quote page.
 Public-domain list.
 About/help text.
 Test DRMed ePubs.

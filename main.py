@@ -97,7 +97,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
                 'user':get_current_session().get("account")
             })
             epub.get_cover()
-            self.redirect("/book/"+str(epub_key.id()))
+            self.redirect("/book/"+str(epub.key().id()))
         else:
             db.delete(entry)
             blobstore.delete(epub.blob.key())
@@ -306,11 +306,10 @@ class Edit(webapp.RequestHandler):
 
     def post(self):
         enforce_login(self)
-        key = self.request.get('epub_key')
-        epub = db.get(key)
-        if not users.is_current_user_admin() and epub.entry_count()>1:
-            self.redirect("/")
         if self.request.get('license') is not None and not users.is_current_user_admin():
+            self.redirect("/")
+        epub = db.get(self.request.get('epub_key'))
+        if not users.is_current_user_admin() and epub.entry_count()>1:
             self.redirect("/")
         epub.language = self.request.get('language')
         epub.title = self.request.get('title')
@@ -337,7 +336,7 @@ class Edit(webapp.RequestHandler):
 
         epub.license = self.request.get('license')
         epub.put()
-        self.redirect("/book/"+str(epub.key.id()))
+        self.redirect("/book/"+str(epub.key().id()))
 
 class Account(webapp.RequestHandler):
     def get(self):
@@ -449,6 +448,7 @@ app = webapp.WSGIApplication([
     ('/share', Share),
     ('/quote/.*', Quote),
     ('/quotes', Quotes),
+    ('/edit', Edit),
     ('/edit/.*', Edit),
     ('/account', Account),
     ('/delete', Delete),
