@@ -49,6 +49,8 @@ class ePubFile(db.Model):
         self.put()
     return self.cover_path
 
+  def isPublicAccess(self):
+    return license=="Public Domain" or license=="Creative Commons"
 
 class InternalFile(db.Model):
   timeCreated = db.DateTimeProperty(auto_now_add=True)

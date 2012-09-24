@@ -8,5 +8,16 @@
 {% endblock %}
 
 {% block content %}
-    {{quote.html|safe}}
+    <div class="middle">
+        <br/>
+        <span style="font-size:larger;">
+            {{quote.html|safe}}
+        </span>
+        <br/>
+        <br/>
+        <hr/>
+        <br/>
+        <b><a href="/book/{{quote.epub.key.id}}">{{quote.epub.title}}</a></b>,
+        section {{quote.file.order}}, &lsquo;<a href="/view/{{quote.epub.key.id}}/{{quote.file.path}}">{{quote.file.name}}</a>&rsquo;
+    </div>
 {% endblock %}

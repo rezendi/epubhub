@@ -9,7 +9,20 @@ def enforce_login(handler):
     session = get_current_session()
     account = session.get("account")
     if account is None:
-        handler.redirect("/")
+        session["message"] = "Please log in first"
+        handler.redirect("/message")
+
+def enforce_rights(handler, epub):
+    session = get_current_session()
+    account = session.get("account")
+    if account is None:
+        session["message"] = "Please log in first"
+        handler.redirect("/message")
+
+    entry = model.LibraryEntry.all().filter("epub = ",epub).filter("user =",db.get(account)).get()
+    if entry is None:
+        session["message"] = "Sorry! This book isn't public-access, and you don't have it in your library."
+        handler.redirect("/message")
 
 def respondWithMessage(handler, message):
     template_values = {
@@ -26,6 +39,12 @@ class About(webapp.RequestHandler):
         }
         path = os.path.join(os.path.dirname(__file__), 'html/about.html')
         self.response.out.write(template.render(path, template_values))
+
+class Message(webapp.RequestHandler):
+    def get(self):
+        session = get_current_session()
+        message = session.get("message")
+        respondWithMessage(self, message)
 
 class Main(webapp.RequestHandler):
     def get(self):
@@ -187,8 +206,9 @@ class Contents(blobstore_handlers.BlobstoreDownloadHandler):
 class Download(blobstore_handlers.BlobstoreDownloadHandler):
     def get(self):
         key = self.request.get('key')
-        blob_info = blobstore.BlobInfo.get(key)
-        self.send_blob(blob_info, save_as = True)
+        epub = db.get(key)
+        enforce_rights(self, epub)
+        self.send_blob(epub.blob, save_as = True)
 
 class View(webapp.RequestHandler):
     def get(self):
@@ -196,6 +216,7 @@ class View(webapp.RequestHandler):
         if len(components)>1:
             id = components[2]
         epub = model.ePubFile.get_by_id(long(id))
+        enforce_rights(self, epub)
         if len(components)<4:
             self.redirect("/book/"+id)
             return
@@ -210,26 +231,26 @@ class Search(webapp.RequestHandler):
         return self.post()
 
     def post(self):
-        query_string = "owners:%s AND (name:%s OR html:%s)" % (get_current_session().get("account"), self.request.get('q'), self.request.get('q'))
-        book_filter = self.request.get('book_filter')
-        if book_filter is not None and len(book_filter.strip())>0:
-            query_string = "book:%s AND %s" % (book_filter, query_string)
-        logging.info("Search query "+query_string)
-        sort_opts = search.SortOptions(match_scorer=search.MatchScorer())
-        opts = search.QueryOptions(limit = 100, snippeted_fields = ['content'], sort_options = sort_opts)
-        query = search.Query(query_string = query_string, options=opts)
         try:
+            query = "(name:%s OR html:%s)" % (self.request.get('q'), self.request.get('q'))
+            book = self.request.get('book_filter')
+            query = "book:%s AND %s" % (book, query) if book is not None and len(book.strip())>0 else query
+            logging.info("Search query "+query)
+            sort_opts = search.SortOptions(match_scorer=search.MatchScorer())
+            opts = search.QueryOptions(limit = 100, snippeted_fields = ['html'], sort_options = sort_opts)
             results = []
             for indexName in ["private", "public"]:
                 index_results = []
                 index = search.Index(indexName)
-                search_results = index.search(query)
+                active_q = "owners:%s AND %s" % (get_current_session().get("account"), query) if indexName=="private" else query
+                search_query = search.Query(query_string = active_q, options=opts)
+                search_results = index.search(search_query)
                 for doc in search_results:
                     internal = db.get(doc.doc_id)
                     if internal is not None:
                         index_results.append({ "doc" : doc, "internal" : internal })
                 results.append({'count' : search_results.number_found, 'results' : index_results})
-
+    
             template_values = {
                 "current_user" : get_current_session().get("account"),
                 "private_results" : results[0]['results'],
@@ -432,6 +453,7 @@ class Clear(webapp.RequestHandler):
 app = webapp.WSGIApplication([
     ('/', Main),
     ('/about', About),
+    ('/message', Message),
     ('/logout', LogOut),
     ('/upload', UploadForm),
     ('/upload_complete', UploadHandler),
