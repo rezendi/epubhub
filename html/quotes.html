@@ -8,9 +8,9 @@
         <OL>
             {% for quote in quotes %}
                 <LI>
-                    <a href='/delete_quote?key={{quote.key}}'>X</a>
+                    <a href='#' onclick="if (confirm('Are you sure you want to delete this quote?')) window.location='/delete_quote?key={{quote.key}}&confirm=true';">X</a>
                     <i>{{quote.title}}</i>:
-                    <a href='/quote/{{quote.key}}'>{{quote.text}}...</a>
+                    <a href='/quote/{{quote.key.id}}'>{{quote.text}}...</a>
                 </LI>
             {% endfor %}
         </OL>

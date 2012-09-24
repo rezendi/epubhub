@@ -247,6 +247,6 @@ class Unpacker:
         prev_file = epub.internals().filter("order =",selected.order-1).get()
         prev = prev_file.path if prev_file is not None else None
         
-        html+= '<script>var epub_share="true", epub_title="%s", epub_chapter="%s", epub_total="%s", epub_file="%s", epub_internal="%s", epub_next="%s", epub_prev="%s"</script>\n' % (epub.title, selected.order, total, epub.key(), selected.key(), next, prev)
+        html+= '<script>var epub_share="true", epub_title="%s", epub_chapter="%s", epub_total="%s", epub_id="%s", epub_internal="%s", epub_next="%s", epub_prev="%s"</script>\n' % (epub.title, selected.order, total, epub.key().id(), selected.key(), next, prev)
         return html
     

@@ -7,7 +7,7 @@
         <div id="book_cover">
             <div id="contents_actions">
                 <UL>
-                    <LI><a href='/edit?key={{key}}'>About</a></LI>
+                    <LI><a href='/edit/{{id}}'>About</a></LI>
                     <LI><a href='/manifest?key={{key}}'>Manifest</a></LI>
                     <LI><a href='/download?key={{key}}'>Download</a></LI>
                     <LI><a href='delete?key={{key}}'>Delete</a></LI>
@@ -18,7 +18,7 @@
                     <input type="submit" name="submit" value="Go">
                 </form>
             </div>
-            <img class="epub_cover_thumb" src="/view/{{key}}/{{cover_path}}"/>
+            <img class="epub_cover_thumb" src="/view/{{id}}/{{cover_path}}"/>
         </div>
     {% endif %}
     <div id="book_contents">
@@ -30,9 +30,9 @@
         <OL>
         {% for file in files %}
             {% if use_name %}
-            <LI><a href='/view/{{key}}/{{file.path}}'>{{file.name}}</a></LI>
+            <LI><a href='/view/{{id}}/{{file.path}}'>{{file.name}}</a></LI>
             {% else %}
-            <LI><a href='/view/{{key}}/{{file.path}}'>{{file.path}}</a></LI>
+            <LI><a href='/view/{{id}}/{{file.path}}'>{{file.path}}</a></LI>
             {% endif %}
         {% endfor %}
         </OL>

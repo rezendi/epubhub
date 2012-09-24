@@ -2,7 +2,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-    <link type="text/css" rel="stylesheet" href="/static/epubbase.css" />
     <link type="text/css" rel="stylesheet" href="/static/epubhost.css" />
     <title>{% block title %}{% endblock %}</title>
     {% block js%}{%endblock%}
@@ -20,7 +19,7 @@
 
 <body{%block bodyjs%}{%endblock%}>
     <div id="eph_header">
-        <a href="/">ePubHost</a>
+        <a href="/" style="margin-left:15px;" >ePubHost</a>
         {% if current_user %}
             <a href="/upload">Upload Books</a>
             <a href="/list">My Books</a>

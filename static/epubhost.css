@@ -1,5 +1,9 @@
-::selection, ::moz-selection, ::webkit-selection {
-  background:lightgray;
+body {
+  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+a {
+  text-decoration:none;
 }
 
 .clear {
@@ -8,16 +12,27 @@
 
 #eph_header {
   background-color:#2C2C2C;
-  padding: 8px 20px 12px;
+  top:0;
+  left:0;
+  height:32px;
+  width:100%;
+  padding-top:8px;
 }
 
 #eph_header a {
   color: #999;
   font-size: 20px;
   font-weight: 200;
-  text-decoration: none;
 }
 
+#eph_spacer {
+  height:40px;
+}
+
+#eph_action a {
+  color:white;
+  user-select:none;
+}
 .splash_container {
   width:100%;
 }

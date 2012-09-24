@@ -97,7 +97,7 @@ class UploadHandler(blobstore_handlers.BlobstoreUploadHandler):
                 'user':get_current_session().get("account")
             })
             epub.get_cover()
-            self.redirect("/contents?key="+str(epub_key))
+            self.redirect("/book/"+str(epub_key.id()))
         else:
             db.delete(entry)
             blobstore.delete(epub.blob.key())
@@ -169,11 +169,13 @@ class Manifest(blobstore_handlers.BlobstoreDownloadHandler):
 
 class Contents(blobstore_handlers.BlobstoreDownloadHandler):
     def get(self):
-        key = self.request.get('key')
-        epub = db.get(key)
+        components = self.request.path.split("/")
+        id = urllib.unquote_plus(components[2])
+        epub = model.ePubFile.get_by_id(long(id))
         template_values = {
             "current_user" : get_current_session().get("account"),
-            "key" : key,
+            "id" : id,
+            "key" : epub.key(),
             "title" : epub.title,
             "cover_path" : epub.cover_path,
             "files" : epub.internals(only_chapters = True),
@@ -192,11 +194,11 @@ class View(webapp.RequestHandler):
     def get(self):
         components = self.request.path.split("/")
         if len(components)>1:
-            epub_key = components[2]
+            id = components[2]
+        epub = model.ePubFile.get_by_id(long(id))
         if len(components)<4:
-            self.redirect("/contents?key="+epub_key)
+            self.redirect("/book/"+id)
             return
-        epub = db.get(epub_key)
         path = urllib.unquote_plus("/".join(components[3:]))
         internal = epub.internals().filter("path = ",path).get()
         renderer = unpack.Unpacker()
@@ -218,17 +220,22 @@ class Search(webapp.RequestHandler):
         query = search.Query(query_string = query_string, options=opts)
         try:
             results = []
-            index = search.Index("private")
-            search_results = index.search(query)
-            for doc in search_results:
-                internal = db.get(doc.doc_id)
-                if internal is not None:
-                    results.append({ "doc" : doc, "internal" : internal })
+            for indexName in ["private", "public"]:
+                index_results = []
+                index = search.Index(indexName)
+                search_results = index.search(query)
+                for doc in search_results:
+                    internal = db.get(doc.doc_id)
+                    if internal is not None:
+                        index_results.append({ "doc" : doc, "internal" : internal })
+                results.append({'count' : search_results.number_found, 'results' : index_results})
 
             template_values = {
                 "current_user" : get_current_session().get("account"),
-                "results" : results,
-                "result_count" : search_results.number_found
+                "private_results" : results[0]['results'],
+                "private_count" : results[0]['count'],
+                "public_results" : results[1]['results'],
+                "public_count" : results[1]['count']
             }
             path = os.path.join(os.path.dirname(__file__), 'html/search_results.html')
             self.response.out.write(template.render(path, template_values))
@@ -238,7 +245,7 @@ class Search(webapp.RequestHandler):
 class Share(webapp.RequestHandler):
     def post(self):
         quote = model.Quote(
-            epub = db.get(self.request.get('epub')),
+            epub = model.ePubFile.get_by_id(long(self.request.get('epub'))),
             file = db.get(self.request.get('file')),
             html = db.Text(self.request.get('html')),
             user = get_current_session().get("account")
@@ -247,7 +254,7 @@ class Share(webapp.RequestHandler):
         unpacker = unpack.Unpacker()
         unpacker.index_quote(quote)
         self.response.headers['Content-Type'] = 'application/json'
-        self.response.out.write('{"result":"ok","url":"/quote/%s"}' % quote.key())
+        self.response.out.write('{"result":"ok","url":"/quote/%s"}' % quote.key().id())
 
 class Quotes(webapp.RequestHandler):
     def get(self):
@@ -270,8 +277,8 @@ class Quotes(webapp.RequestHandler):
 class Quote(webapp.RequestHandler):
     def get(self):
         components = self.request.path.split("/")
-        quote_key = urllib.unquote_plus(components[2])
-        quote = db.get(quote_key)
+        id = urllib.unquote_plus(components[2])
+        quote = model.Quote.get_by_id(long(id))
         template_values = {
             "current_user" : get_current_session().get("account"),
             "quote" : quote
@@ -282,8 +289,9 @@ class Quote(webapp.RequestHandler):
 
 class Edit(webapp.RequestHandler):
     def get(self):
-        key = self.request.get('key')
-        epub = db.get(key)
+        components = self.request.path.split("/")
+        id = urllib.unquote_plus(components[2])
+        epub = model.ePubFile.get_by_id(long(id))
         template_values = {
             "current_user" : get_current_session().get("account"),
             "admin" : users.is_current_user_admin(),
@@ -315,7 +323,7 @@ class Edit(webapp.RequestHandler):
         epub.date = self.request.get('date')
         epub.license = self.request.get('license')
         epub.put()
-        self.redirect("/contents?key="+key)
+        self.redirect("/book/"+str(epub.key.id()))
 
 class Account(webapp.RequestHandler):
     def get(self):
@@ -363,11 +371,22 @@ class Delete(webapp.RequestHandler):
         if confirm!="true":
             return
         epub_key = self.request.get('key')
+        epub = db.get(epub_key)
         account = get_current_session().get("account")
-        entry = model.LibraryEntry.all().filter("epub = ",db.get(epub_key)).filter("user =",db.get(account)).get()
-        logging.info("Got entry %s from %s and %s" % (entry, epub_key, account))
+        entry = model.LibraryEntry.all().filter("epub = ",epub).filter("user =",db.get(account)).get()
         if entry is not None:
             db.delete(entry)
+            if epub.entry_count()==0:
+                for indexName in ["private","public"]:
+                    index = search.Index(indexName)
+                    opts = search.QueryOptions(limit = 1000, ids_only = True)
+                    query = search.Query(query_string = "book:%s" % epub_key, options=opts)
+                    docs = index.search(query)
+                    for doc in docs:
+                        index.remove(doc.doc_id)
+                blobstore.delete(epub.blob.key())
+                db.delete(epub)
+
             self.redirect('/list')
         else:
             self.response.out.write("Not permitted")
@@ -392,12 +411,10 @@ class Clear(webapp.RequestHandler):
         if not users.is_current_user_admin():
             self.response.out.write("No")
             return
-        index = search.Index(name="private")
-        for document in index.list_documents():
-            index.remove(document.doc_id)
-        index = search.Index(name="public")
-        for document in index.list_documents():
-            index.remove(document.doc_id)
+        for indexName in ["private","public"]:
+            index = search.Index(indexName)
+            for doc in index.list_documents(limit=1000, ids_only=True):
+                index.remove(doc.doc_id)
 
 app = webapp.WSGIApplication([
     ('/', Main),
@@ -410,7 +427,7 @@ app = webapp.WSGIApplication([
     ('/list', List),
     ('/unpack_internal', UnpackInternal),
     ('/view/.*', View),
-    ('/contents', Contents),
+    ('/book/.*', Contents),
     ('/manifest', Manifest),
     ('/download', Download),
     ('/search', Search),
@@ -418,7 +435,7 @@ app = webapp.WSGIApplication([
     ('/share', Share),
     ('/quote/.*', Quote),
     ('/quotes', Quotes),
-    ('/edit', Edit),
+    ('/edit/.*', Edit),
     ('/account', Account),
     ('/delete', Delete),
     ('/delete_quote', DeleteQuote),

@@ -3,12 +3,24 @@
 {% block title %}ePubHost - Search Results{% endblock %}
 
 {% block content %}
-    <H2>{{result_count}} Results</H2>
+    <H2>{{private_count}} Private Results</H2>
     <div class="search_results">
         <OL>
-        {% for result in results %}
+        {% for result in private_results %}
             <LI>{{result.internal.epub.title}}:
-            <a href='/view/{{result.internal.epub.key}}/{{result.internal.path}}'>{{result.internal.name}}</a>
+            <a href='/view/{{result.internal.epub.key.id}}/{{result.internal.path}}'>{{result.internal.name}}</a>
+            {% for expression in result.doc.expressions %}
+                <div class="search_snippet">{{expression.value}}</div>
+            {% endfor %}
+        {% endfor %}
+        </OL>
+    </div>
+    <H2>{{public_count}} Public Results</H2>
+    <div class="search_results">
+        <OL>
+        {% for result in public_results %}
+            <LI>{{result.internal.epub.title}}:
+            <a href='/view/{{result.internal.epub.key.id}}/{{result.internal.path}}'>{{result.internal.name}}</a>
             {% for expression in result.doc.expressions %}
                 <div class="search_snippet">{{expression.value}}</div>
             {% endfor %}

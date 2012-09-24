@@ -1,8 +1,9 @@
 $(document).ready(function() {
   if (epub_share && epub_share=="true") {
-    $("body").prepend(getBar("top"));
-    $("body").append(getBar("bottom"));
-    $("body").mouseup(function() { addSelectedHTML(); });
+    $("body").prepend(getHeader());
+    $("body").mouseup(function() {
+	  addSelectedHTML();
+	});
     $("p").hover(function() {
 	  if (htmlSelected())
 		return;
@@ -10,18 +11,18 @@ $(document).ready(function() {
       var included = added.indexOf( $("p").index($(this)) );
       var span = "";
       if (included < 0) {
-        span = "<span class=\'eph_floater\' style=\'float:right;color:blue;\'>+</span>"
         $(this).click(function() { eph_addPara($(this)); });
+        span = "<span class=\'eph_floater\' style=\'float:right;color:blue;\'>+</span>"
+        $(span).insertBefore($(this));
       }
       else {
-        span = "<span class=\'eph_floater\' style=\'float:right;color:blue;\'><a href=\'#\' style=\'text-decoration:none;\' onclick=\'eph_share();\'>SHARE THIS QUOTE</a></span>"
         $(this).click(function() { eph_subtractPara($(this)); });
+		$("#eph_action").html(getShareLink());
       }
-      $(span).insertBefore($(this));
     });
   }
   else
-    $("#header").append(getLink("top"));
+    $("#header").append(getContentsLink("top"));
 });
 
 var added = new Array();
@@ -38,7 +39,7 @@ var eph_addPara = function(para) {
   }
   added.push($("p").index(para))
   para.css("background-color","gainsboro");
-  $(".eph_floater").html('<a href=\'#\' style=\'text-decoration:none;\' onclick=\'eph_share();\'>SHARE THIS QUOTE</a>');
+  $("#eph_action").html(getShareLink());
   para.click(function() { eph_subtractPara($(this)); });
 }
 
@@ -49,7 +50,7 @@ var eph_subtractPara = function(para) {
       added.splice(i,1);
   }
   para.css("background-color","");
-  $(".eph_floater").text("+");
+  $("#eph_action").html('Click on or select text to share a quote');
   para.click(function() { eph_addPara($(this)); });
   if (htmlSelected())
 	addSelectedHTML();
@@ -65,10 +66,11 @@ var eph_share = function() {
 	  html+="<p>"+$(this).html()+"</p>\n";
 	});
   }
+  $("#eph_action").html("Sharing...");
   $.ajax({type: 'POST',
 		  url: '/share',
 		  dataType: 'json',
-		  data: {'html' : html, 'epub' : epub_file, 'file' : epub_internal},
+		  data: {'html' : html, 'epub' : epub_id, 'file' : epub_internal},
 		  success: onShareSuccess,
 		  error: onShareError});
 }
@@ -77,33 +79,31 @@ var onShareSuccess = function(results) {
   $(".eph_floater").remove();
   $("p").css("background-color","");
   added = new Array();
-  alert("Shared to "+results["url"]);
+  $("#eph_action").html("Shared to <a target='_blank' href='"+results["url"]+"'>"+results["url"]+"</a>");
 }
 
 var onShareError = function(error) {
   alert("Error: "+error);
 }
 
-var getBar = function(name) {
-  if (name=="top")
-    html = "<div id='eph_header' style='margin-top:8px;margin-left:2px;'>";
-  else
-    html = "<div style='background-color:gainsboro;margin-bottom:8px;'>";
-  html+= "<a style='float:left; href='/view/"+epub_file+"/"+epub_prev+"'>Prev</a>";
-  if (name=="top") {
-    html+= "<a href='/' style='margin-right:20px;'>Home</a> <a href='/contents?key="+epub_file+"'>"+epub_title+", Section "+epub_chapter+" of "+epub_total+" </a>";
-	html+= "<span style='margin-left:50px;color:#999;'>Click on or select text to share a quote</span>";
-  }
-  else
-	html+= "&nbsp;"
-  html+= "<a style='float:right;' href='/view/"+epub_file+"/"+epub_next+"'>Next</a>";
+var getHeader = function(name) {
+  var html = "<div id='eph_header' style='position:fixed;'>";
+  html+= "<a style='margin-left:15px; float:left;' href='/view/"+epub_id+"/"+epub_prev+"'>Prev</a>";
+  html+= "<a href='/' style='margin-right:20px;'>Home</a> <a href='/book/"+epub_id+"'>"+epub_title+", Section "+epub_chapter+" of "+epub_total+" </a>";
+  html+= "<span id='eph_action' style='margin-left:50px;color:#999;'>Click on or select text to share a quote</span>";
+  html+= "<a style='float:right;' href='/view/"+epub_id+"/"+epub_next+"'>Next</a>";
   html+= "</div>";
+  html+= "<div id='eph_spacer'>&nbsp;</div>";
   return html;
 }
 
-var getLink = function() {
-  html = "<a style='float:right;font-weight:bold;' href='/contents?key="+epub_file+"'>"+epub_title+"</a>";
+var getContentsLink = function() {
+  html = "<a style='float:right;font-weight:bold;' href='/book/"+epub_id+"'>"+epub_title+"</a>";
   return html;
+}
+
+var getShareLink = function() {
+  return "<a href=\'#\' style=\'text-decoration:none;\' onclick=\'eph_share();\'>Share Selected Text</a>"
 }
 
 var htmlSelected = function() {
@@ -111,11 +111,11 @@ var htmlSelected = function() {
 }
 
 var addSelectedHTML = function() {
-  if (!htmlSelected())
+  if (!htmlSelected() || $("#eph_action").html().indexOf(getSelectedHTML())>=0)
 	return;
   $("p").css("background-color","");
   added = new Array();
-  $(".eph_floater").html('<a href=\'#\' style=\'text-decoration:none;\' onclick=\'eph_share();\'>SHARE THIS QUOTE</a>');
+  $("#eph_action").html(getShareLink());
 }
 
 var getSelectedHTML = function() {

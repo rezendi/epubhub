@@ -1,12 +1,11 @@
-Share design.
 About/help text.
-
 Test DRMed ePubs.
-Design go-over.
-
-UI for book, share deletion.
-Delete owner index when book entry deleted.
+Design go-over: IE, etc.
 
 Eventually:
  Share quote & comment to FB/Twitter.
- .mobi files.
+ Handle .mobi files too.
+ Cache entire book for mobile HTML reading.
+ Drag-drop uploading.
+ "Indexing...Indexed"
+

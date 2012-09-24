@@ -18,17 +18,17 @@
                 <div id="epub_author">{{result.epub.creator}}</div>
                 <div id="epub_title">{{result.epub.title}}</div>
                 <div class="epub_left">
-                    <a href='/contents?key={{result.epub.key}}'>
-                        <img class="epub_cover_thumb" src="/view/{{result.epub.key}}/{{result.epub.cover_path}}" height="100"/>
+                    <a href='/book/{{result.epub.key.id}}'>
+                        <img class="epub_cover_thumb" src="/view/{{result.epub.key.id}}/{{result.epub.cover_path}}" height="100"/>
                     </a>
                 </div>
                 <div class="epub_right">
                     <UL>
-                        <LI><a href='/edit?key={{result.epub.key}}'>About</a></LI>
-                        <LI><a href='/contents?key={{result.epub.key}}'>Contents</a></LI>
+                        <LI><a href='/edit/{{result.epub.key.id}}'>About</a></LI>
+                        <LI><a href='/book/{{result.epub.key.id}}'>Contents</a></LI>
                         <LI><a href='/manifest?key={{result.epub.key}}'>Manifest</a></LI>
                         <LI><a href='/download?key={{result.epub.blob.key}}'>Download</a></LI>
-                        <LI><a href='delete?key={{result.epub.key}}'>Delete</a></LI>
+                        <LI><a href='#' onclick="if (confirm('Are you sure you want to delete this book?')) window.location='delete?key={{result.epub.key}}&confirm=true';">Delete</a></LI>
                     </UL>
                 </div>
             </div>
