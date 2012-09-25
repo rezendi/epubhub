@@ -10,7 +10,7 @@
                 <LI>
                     <a href='#' onclick="if (confirm('Are you sure you want to delete this quote?')) window.location='/delete_quote?key={{quote.key}}&confirm=true';">X</a>
                     <i>{{quote.title}}</i>:
-                    <a href='/quote/{{quote.key.id}}'>{{quote.text}}...</a>
+                    &ldquo;<a href='/quote/{{quote.key.id}}'>{{quote.text}}&hellip;</a>&rdquo;
                 </LI>
             {% endfor %}
         </OL>

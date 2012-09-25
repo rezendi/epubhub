@@ -86,10 +86,6 @@ a {
   padding:20px;
 }
 
-.center_div {
-  text-align:center;
-}
-
 .epub_div {
   padding:20px;
   width:256px;
@@ -166,11 +162,11 @@ a {
 }
 
 .search_results ol li {
-  margin-bottom:5px;
+  margin-bottom:7px;
 }
 
-.search-snippet {
+.search_snippet {
+  font-size:small;
   font-style:italic;
   margin-left:30px;
-  background-color:gainsboro;
 }

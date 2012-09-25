@@ -3,28 +3,32 @@
 {% block title %}ePubHost - Search Results{% endblock %}
 
 {% block content %}
-    <H2>{{private_count}} Private Results</H2>
-    <div class="search_results">
-        <OL>
-        {% for result in private_results %}
-            <LI>{{result.internal.epub.title}}:
-            <a href='/view/{{result.internal.epub.key.id}}/{{result.internal.path}}'>{{result.internal.name}}</a>
-            {% for expression in result.doc.expressions %}
-                <div class="search_snippet">{{expression.value|safe}}</div>
+    {% if private_show %}
+        <H2>{{private_count}} Private Results</H2>
+        <div class="search_results">
+            <OL>
+            {% for result in private_results %}
+                <LI>{{result.internal.epub.title}}:
+                <a href='/view/{{result.internal.epub.key.id}}/{{result.internal.path}}'>{{result.internal.name}}</a>
+                {% for expression in result.doc.expressions %}
+                    <div class="search_snippet">{{expression.value|safe}}</div>
+                {% endfor %}
             {% endfor %}
-        {% endfor %}
-        </OL>
-    </div>
-    <H2>{{public_count}} Public Results</H2>
-    <div class="search_results">
-        <OL>
-        {% for result in public_results %}
-            <LI>{{result.internal.epub.title}}:
-            <a href='/view/{{result.internal.epub.key.id}}/{{result.internal.path}}'>{{result.internal.name}}</a>
-            {% for expression in result.doc.expressions %}
-                <div class="search_snippet">{{expression.value|safe}}</div>
+            </OL>
+        </div>
+    {% endif %}
+    {% if public_show %}
+        <H2>{{public_count}} Public Results</H2>
+        <div class="search_results">
+            <OL>
+            {% for result in public_results %}
+                <LI>{{result.internal.epub.title}}:
+                <a href='/view/{{result.internal.epub.key.id}}/{{result.internal.path}}'>{{result.internal.name}}</a>
+                {% for expression in result.doc.expressions %}
+                    <div class="search_snippet">{{expression.value|safe}}</div>
+                {% endfor %}
             {% endfor %}
-        {% endfor %}
-        </OL>
-    </div>
+            </OL>
+        </div>
+    {% endif %}
 {% endblock %}

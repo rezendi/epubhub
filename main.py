@@ -151,7 +151,9 @@ class Index(webapp.RequestHandler):
 class List(webapp.RequestHandler):
     def get(self):
         account = get_current_session().get("account")
+        public = False
         if account is None or self.request.get('show')=="public":
+            public = True
             epubs = model.ePubFile.all().filter("license IN",["Public Domain","Creative Commons"])
         else:
             epubs = []
@@ -167,7 +169,8 @@ class List(webapp.RequestHandler):
         template_values = {
             "current_user" : get_current_session().get("account"),
             "upload_url" : blobstore.create_upload_url('/upload_complete'),
-            "results" : None if len(results)==0 else results
+            "results" : None if len(results)==0 else results,
+            "public" : public
         }
         path = os.path.join(os.path.dirname(__file__), 'html/books.html')
         self.response.out.write(template.render(path, template_values))
@@ -232,6 +235,7 @@ class Search(webapp.RequestHandler):
 
     def post(self):
         try:
+            include = self.request.get('include')
             query = "(name:%s OR html:%s)" % (self.request.get('q'), self.request.get('q'))
             book = self.request.get('book_filter')
             query = "book:%s AND %s" % (book, query) if book is not None and len(book.strip())>0 else query
@@ -240,6 +244,9 @@ class Search(webapp.RequestHandler):
             opts = search.QueryOptions(limit = 100, snippeted_fields = ['html'], sort_options = sort_opts)
             results = []
             for indexName in ["private", "public"]:
+                if include is not None and len(include.strip())>0 and include.find(indexName)==-1:
+                    results.append({'count' : -1, 'results' : [], 'show' : False})
+                    continue
                 index_results = []
                 index = search.Index(indexName)
                 active_q = "owners:%s AND %s" % (get_current_session().get("account"), query) if indexName=="private" else query
@@ -249,14 +256,16 @@ class Search(webapp.RequestHandler):
                     internal = db.get(doc.doc_id)
                     if internal is not None:
                         index_results.append({ "doc" : doc, "internal" : internal })
-                results.append({'count' : search_results.number_found, 'results' : index_results})
+                results.append({'count' : search_results.number_found, 'results' : index_results, 'show' : True})
     
             template_values = {
                 "current_user" : get_current_session().get("account"),
                 "private_results" : results[0]['results'],
                 "private_count" : results[0]['count'],
+                "private_show" : results[0]['show'],
                 "public_results" : results[1]['results'],
-                "public_count" : results[1]['count']
+                "public_count" : results[1]['count'],
+                "public_show" : results[1]['show']
             }
             path = os.path.join(os.path.dirname(__file__), 'html/search_results.html')
             self.response.out.write(template.render(path, template_values))
@@ -286,7 +295,7 @@ class Quotes(webapp.RequestHandler):
             html = re.sub('<[^<]+?>', '', quote.html)
             words = html.split(" ")
             words = words[0:6] if len(words) > 7 else words
-            text = '"'+" ".join(words)+'"'
+            text = " ".join(words)
             results.append({ "title" : quote.epub.title, "key" : quote.key(), "text" : text})
         template_values = {
             "current_user" : get_current_session().get("account"),

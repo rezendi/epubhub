@@ -3,12 +3,15 @@
 {% block title %}Your Books{% endblock %}
 
 {% block content %}
-    <div class="center_div">
+    <div class="middle">
         <form action="/search" method="GET">
             <input class="input_field" type="search" name="q" placeholder="Search"> <input id="search_submit" type="submit" name="submit" value="Go">
         </form>
+        <HR/>
+        {% if public %}
+            <h2>Public Domain / Creative Commons books</h2>
+        {% endif %}
     </div>
-    <HR width="50%"/>
     {% if results %}
         {% for result in results %}
             {% if result.fourth %}
@@ -35,8 +38,10 @@
         {% endfor %}
         <div class="clear"/>
     {% else %}
-        <div class="center_div">
-        You have no books stored on ePubHost. Please use the "Upload" link above to add books.
-        </div>
+        {% if not public %}
+            <div class="middle">
+                You have no books stored on ePubHost. Please use the "Upload" link above to add books.
+            </div>
+        {% endif %}
     {% endif %}
 {% endblock %}

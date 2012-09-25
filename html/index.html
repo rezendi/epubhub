@@ -20,9 +20,11 @@
             <a class="btn-auth btn-twitter" href="/auth/twitter">Sign in with <b>Twitter</b></a>
             <hr/>
             <form action="/search" method="GET">
-                <input class="input_field" type="search" name="q" placeholder="Search"> <input id="search_submit" type="submit" name="submit" value="Go">
+                <input class="input_field" type="search" name="q" placeholder="Search"/>
+                <input type="hidden" name="include" value="public"/>
+                <input id="search_submit" type="submit" name="submit" value="Go"/>
                 <br/>
-                (Public Domain / Creative Commons books only)
+                (<a href="/books?show=public">Public Domain / Creative Commons</a> books only)
             </form>
         </div>
     </div>

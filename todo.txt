@@ -1,14 +1,14 @@
-Public-domain list.
-Search results UI.
-About/help text.
-
-Test DRMed ePubs.
-Final once-over.
+Public books on home page.
+Link to / order by author.
+About/FAQ.
+Final go-over.
 
 Eventually:
  Share quote & comment to FB/Twitter.
  Handle .mobi files too.
+ Page cursors.
  Cache entire book for mobile HTML reading.
  Drag-drop uploading.
  "Indexing...Indexed"
+ Test DRMed ePubs.
 
