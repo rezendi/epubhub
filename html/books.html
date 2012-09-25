@@ -5,43 +5,52 @@
 {% block content %}
     <div class="middle">
         <form action="/search" method="GET">
-            <input class="input_field" type="search" name="q" placeholder="Search"> <input id="search_submit" type="submit" name="submit" value="Go">
+            <input class="input_field" type="search" name="q" placeholder="Search"><input id="search_submit" type="submit" name="submit" value="Go">
         </form>
         <HR/>
-        {% if public %}
+        {% if show = "public" %}
             <h2>Public Domain / Creative Commons books</h2>
         {% endif %}
+        <ul class="menubar">
+            <li>Order by:</i>
+            <li><a href="/books?public={{show}}&last={{sort}}&sort=author">Author</a></li>
+            |
+            <li><a href="/books?public={{show}}&last={{sort}}&sort=title">Title</a></li>
+            |
+            <li><a href="/books?public={{show}}&last={{sort}}&sort=date">Date</a></li>
+        </ul>
     </div>
-    {% if results %}
-        {% for result in results %}
-            {% if result.fourth %}
-                <div class="clear"/>
+    <div class="center">
+        {% if results %}
+            {% for result in results %}
+                {% if result.fourth %}
+                    <div></div>
+                {% endif %}
+                <div class="epub_div">
+                    <div id="epub_author">{{result.epub.creator}}</div>
+                    <div id="epub_title">{{result.epub.title}}</div>
+                    <div class="epub_left">
+                        <a href='/book/{{result.epub.key.id}}'>
+                            <img class="epub_cover_thumb" src="/view/{{result.epub.key.id}}/{{result.epub.cover_path}}" height="100"/>
+                        </a>
+                    </div>
+                    <div class="epub_right">
+                        <UL>
+                            <LI><a href='/edit/{{result.epub.key.id}}'>About</a></LI>
+                            <LI><a href='/book/{{result.epub.key.id}}'>Contents</a></LI>
+                            <LI><a href='/manifest?key={{result.epub.key}}'>Manifest</a></LI>
+                            <LI><a href='/download?key={{result.epub.key}}'>Download</a></LI>
+                            <LI><a href='#' onclick="if (confirm('Are you sure you want to delete this book?')) window.location='delete?key={{result.epub.key}}&confirm=true';">Delete</a></LI>
+                        </UL>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            {% if not public %}
+                <div class="middle">
+                    You have no books stored on ePubHost. Please use the "Upload" link above to add books.
+                </div>
             {% endif %}
-            <div class="epub_div">
-                <div id="epub_author">{{result.epub.creator}}</div>
-                <div id="epub_title">{{result.epub.title}}</div>
-                <div class="epub_left">
-                    <a href='/book/{{result.epub.key.id}}'>
-                        <img class="epub_cover_thumb" src="/view/{{result.epub.key.id}}/{{result.epub.cover_path}}" height="100"/>
-                    </a>
-                </div>
-                <div class="epub_right">
-                    <UL>
-                        <LI><a href='/edit/{{result.epub.key.id}}'>About</a></LI>
-                        <LI><a href='/book/{{result.epub.key.id}}'>Contents</a></LI>
-                        <LI><a href='/manifest?key={{result.epub.key}}'>Manifest</a></LI>
-                        <LI><a href='/download?key={{result.epub.key}}'>Download</a></LI>
-                        <LI><a href='#' onclick="if (confirm('Are you sure you want to delete this book?')) window.location='delete?key={{result.epub.key}}&confirm=true';">Delete</a></LI>
-                    </UL>
-                </div>
-            </div>
-        {% endfor %}
-        <div class="clear"/>
-    {% else %}
-        {% if not public %}
-            <div class="middle">
-                You have no books stored on ePubHost. Please use the "Upload" link above to add books.
-            </div>
         {% endif %}
-    {% endif %}
+    </div>
 {% endblock %}

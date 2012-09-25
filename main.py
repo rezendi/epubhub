@@ -13,11 +13,15 @@ def enforce_login(handler):
         handler.redirect("/message")
 
 def enforce_rights(handler, epub):
+    if epub is None or epub.isPublicAccess():
+        return;
+
     session = get_current_session()
     account = session.get("account")
     if account is None:
         session["message"] = "Please log in first"
         handler.redirect("/message")
+        return
 
     entry = model.LibraryEntry.all().filter("epub = ",epub).filter("user =",db.get(account)).get()
     if entry is None:
@@ -67,6 +71,7 @@ class Main(webapp.RequestHandler):
         account = None if account_key is None else db.get(account_key)
         if account is None:
             template_values = {
+                "epubs" : model.ePubFile.all().filter("license IN",["Public Domain","Creative Commons"]).fetch(3),
                 "current_user" : get_current_session().get("account"),
                 "login_url" : users.create_login_url("/")
             }
@@ -161,16 +166,30 @@ class List(webapp.RequestHandler):
             for entry in entries:
                 epubs.append(entry.epub)
 
+        sort = self.request.get('sort')
+        sort = "author" if sort is None or len(sort.strip())==0 else sort
+        last = self.request.get('last')
+        if sort=="author":
+            epubs = sorted(epubs, key = lambda epub:epub.creator)
+            epubs = reversed(epubs) if last=="author" else epubs
+        if sort=="title":
+            epubs = sorted(epubs, key = lambda epub:epub.title)
+            epubs = reversed(epubs) if last=="title" else epubs
+        if sort=="date":
+            epubs = sorted(epubs, key = lambda epub:epub.timeCreated)
+            epubs = reversed(epubs) if last=="date" else epubs
+
         results = []
         idx = 0
-        for epub in sorted(epubs, key = lambda epub:epub.title):
-            results.append({ 'epub' : epub, 'fourth' : idx%4==0 })
+        for epub in epubs:
+            results.append({ 'epub' : epub, 'fourth' : (idx+1)%4==0 })
             idx+=1
         template_values = {
             "current_user" : get_current_session().get("account"),
             "upload_url" : blobstore.create_upload_url('/upload_complete'),
             "results" : None if len(results)==0 else results,
-            "public" : public
+            "show" : "public" if public else "all",
+            "sort" : None if sort==last else sort
         }
         path = os.path.join(os.path.dirname(__file__), 'html/books.html')
         self.response.out.write(template.render(path, template_values))
@@ -454,7 +473,7 @@ class Clear(webapp.RequestHandler):
         if not users.is_current_user_admin():
             self.response.out.write("No")
             return
-        for indexName in ["private","public"]:
+        for indexName in ["private","public","chapters"]:
             index = search.Index(indexName)
             for doc in index.list_documents(limit=1000, ids_only=True):
                 index.remove(doc.doc_id)

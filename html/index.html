@@ -5,28 +5,47 @@
     <link type="text/css" rel="stylesheet" href="/static/auth-buttons.css" />
 {% endblock %}
 {% block content %}
-    <div class="splash_container">
-        <div class="splash middle">
-            <h1>ePubHost</h1>
-            Store, search, and share your DRM-free ebooks.
-        </div>
-
-        <div class="middle">
-            <br/>
-            <a class="btn-auth btn-facebook" href="/auth/facebook">Sign in with <b>Facebook</b></a>
-            <p/>
-            <a class="btn-auth btn-google" href="{{login_url}}">Sign in with <b>Google</b></a>
-            <p/>
-            <a class="btn-auth btn-twitter" href="/auth/twitter">Sign in with <b>Twitter</b></a>
-            <hr/>
-            <form action="/search" method="GET">
-                <input class="input_field" type="search" name="q" placeholder="Search"/>
-                <input type="hidden" name="include" value="public"/>
-                <input id="search_submit" type="submit" name="submit" value="Go"/>
-                <br/>
-                (<a href="/books?show=public">Public Domain / Creative Commons</a> books only)
-            </form>
-        </div>
+    <div class="splash mid50">
+        <h1>ePubHost</h1>
+        Store, search, and share quotes from your DRM-free ebooks.
     </div>
-    
+
+    <div class="mid50">
+        <div class="auth"><a class="btn-auth btn-facebook" href="/auth/facebook">Sign in with <b>Facebook</b></a></div>
+        <div class="auth"><a class="btn-auth btn-google" href="{{login_url}}">Sign in with <b>Google</b></a></div>
+        <div class="auth"><a class="btn-auth btn-twitter" href="/auth/twitter">Sign in with <b>Twitter</b></a></div>
+        <hr/>
+        <form action="/search" method="GET">
+            <input class="input_field" type="search" name="q" placeholder="Search"/>
+            <input type="hidden" name="include" value="public"/>
+            <input id="search_submit" type="submit" name="submit" value="Go"/>
+            <br/>
+            (<a href="/books?show=public">Public Domain / Creative Commons</a> books only)
+        </form>
+        <br/>
+        <hr/>
+    </div>
+
+    <div class="center">
+        {% for epub in epubs %}
+            <div class="epub_div">
+                <div id="epub_author">{{epub.creator}}</div>
+                <div id="epub_title">{{epub.title}}</div>
+                <div class="epub_left">
+                    <a href='/book/{{epub.key.id}}'>
+                        <img class="epub_cover_thumb" src="/view/{{epub.key.id}}/{{epub.cover_path}}" height="100"/>
+                    </a>
+                </div>
+                <div class="epub_right" style="margin-top:10px;">
+                    <UL>
+                        <LI><a href='/edit/{{epub.key.id}}'>About</a></LI>
+                        <LI><a href='/book/{{epub.key.id}}'>Contents</a></LI>
+                        <LI><a href='/manifest?key={{epub.key}}'>Manifest</a></LI>
+                        <LI><a href='/download?key={{epub.key}}'>Download</a></LI>
+                    </UL>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
 {% endblock %}

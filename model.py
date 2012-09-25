@@ -38,9 +38,8 @@ class ePubFile(db.Model):
   
   def get_cover(self, force_recheck=False):
     if self.cover_path is None or force_recheck:
-      internals = InternalFile.all().filter("epub = ", self)
       potential_cover = None
-      for file in internals:
+      for file in self.internals():
         if file.data is not None and file.path.endswith("png") or file.path.endswith("jpg") or file.path.endswith("jpeg"):
           if potential_cover is None or file.name.lower().find("cover") > 0 or len(file.data) > len(potential_cover.data):
             potential_cover = file
@@ -50,7 +49,7 @@ class ePubFile(db.Model):
     return self.cover_path
 
   def isPublicAccess(self):
-    return license=="Public Domain" or license=="Creative Commons"
+    return self.license=="Public Domain" or self.license=="Creative Commons"
 
 class InternalFile(db.Model):
   timeCreated = db.DateTimeProperty(auto_now_add=True)

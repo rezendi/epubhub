@@ -1,14 +1,14 @@
-Public books on home page.
-Link to / order by author.
 About/FAQ.
 Final go-over.
+Launch.
 
 Eventually:
+ Random public books (incl. always one of mine) on home page.
  Share quote & comment to FB/Twitter.
  Handle .mobi files too.
  Page cursors.
  Cache entire book for mobile HTML reading.
+ Index/search books by author etc.
  Drag-drop uploading.
  "Indexing...Indexed"
  Test DRMed ePubs.
-
