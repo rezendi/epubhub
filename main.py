@@ -156,9 +156,8 @@ class Index(webapp.RequestHandler):
 class List(webapp.RequestHandler):
     def get(self):
         account = get_current_session().get("account")
-        public = False
-        if account is None or self.request.get('show')=="public":
-            public = True
+        public = account is None or self.request.get('show')=="public"
+        if public:
             epubs = model.ePubFile.all().filter("license IN",["Public Domain","Creative Commons"])
         else:
             epubs = []
@@ -188,7 +187,7 @@ class List(webapp.RequestHandler):
             "current_user" : get_current_session().get("account"),
             "upload_url" : blobstore.create_upload_url('/upload_complete'),
             "results" : None if len(results)==0 else results,
-            "show" : "public" if public else "all",
+            "show" : "public" if public else "own",
             "sort" : None if sort==last else sort
         }
         path = os.path.join(os.path.dirname(__file__), 'html/books.html')
@@ -475,7 +474,7 @@ class Clear(webapp.RequestHandler):
         if not users.is_current_user_admin():
             self.response.out.write("No")
             return
-        for indexName in ["private","public","chapters"]:
+        for indexName in ["chapters"]: #["private","public","chapters"]:
             index = search.Index(indexName)
             for doc in index.list_documents(limit=1000, ids_only=True):
                 index.remove(doc.doc_id)
