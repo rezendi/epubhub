@@ -1,8 +1,10 @@
 About/FAQ.
+Description in contents.
 Final go-over.
 Launch.
 
 Eventually:
+ Use manifest spine, re-unpack task.
  Random public books (incl. always one of mine) on home page.
  Share quote & comment to FB/Twitter.
  Handle .mobi files too.

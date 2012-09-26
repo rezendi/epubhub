@@ -25,6 +25,11 @@ indexes:
   properties:
   - name: epub
   - name: path
+
+- kind: InternalFile
+  properties:
+  - name: epub
+  - name: path
   - name: order
 
 - kind: Quote

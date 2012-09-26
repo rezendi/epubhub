@@ -20,32 +20,12 @@
             <input type="hidden" name="include" value="public"/>
             <input id="search_submit" type="submit" name="submit" value="Go"/>
             <br/>
-            (<a href="/books?show=public">Public Domain / Creative Commons</a> books only)
+            Searches Public Domain / Creative Commons books only.
+            <br/>
+            (<a href="/books?show=public">View all Public Domain / Creative Commons books</a>)
         </form>
         <br/>
         <hr/>
-    </div>
-
-    <div class="center">
-        {% for epub in epubs %}
-            <div class="epub_div">
-                <div id="epub_author">{{epub.creator}}</div>
-                <div id="epub_title">{{epub.title}}</div>
-                <div class="epub_left">
-                    <a href='/book/{{epub.key.id}}'>
-                        <img class="epub_cover_thumb" src="/view/{{epub.key.id}}/{{epub.cover_path}}" height="100"/>
-                    </a>
-                </div>
-                <div class="epub_right" style="margin-top:10px;">
-                    <UL>
-                        <LI><a href='/edit/{{epub.key.id}}'>About</a></LI>
-                        <LI><a href='/book/{{epub.key.id}}'>Contents</a></LI>
-                        <LI><a href='/manifest?key={{epub.key}}'>Manifest</a></LI>
-                        <LI><a href='/download?key={{epub.key}}'>Download</a></LI>
-                    </UL>
-                </div>
-            </div>
-        {% endfor %}
     </div>
 
 {% endblock %}

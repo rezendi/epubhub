@@ -14,14 +14,14 @@ class Unpacker:
             for filename in zippedfile.namelist():
                 if filename=="mimetype":
                     mimetype = zippedfile.read(filename)
-                if filename.endswith("content.opf"):
+                if filename.endswith(".opf"):
                     manifest = zippedfile.read(filename)
                     possible_blobs = blobstore.BlobInfo.all().filter("size = ", epub.blob.size).fetch(10)
                     for possible_blob in possible_blobs:
                         possible_epub = model.ePubFile.all().filter("blob = ", possible_blob.key()).get()
                         if possible_epub is not None:
                             for internal in possible_epub.internals():
-                                if internal.path.endswith("content.opf") and internal.text==db.Text(manifest, encoding="utf-8"):
+                                if internal.path.endswith(".opf") and internal.text==db.Text(manifest, encoding="utf-8"):
                                     replaceWith = possible_epub
             
             if mimetype is None or mimetype.find("application/epub")==-1:
@@ -53,19 +53,27 @@ class Unpacker:
         for filename in zippedfile.namelist():
             filenames.append(filename)
         
+        content_file_counter = 0
         for filename in sorted(filenames):
-            if filename.endswith("content.opf"):
+            if filename.endswith(".xml") or filename.endswith("html"):
+                content_file_counter+=1
+            elif filename.endswith(".opf"):
                 self.parseMetadata(epub, zippedfile.read(filename))
-            if filename.endswith("toc.ncx"):
+            elif filename.endswith(".ncx"):
                 toc_text = db.Text(zippedfile.read(filename), encoding="utf-8")
                 toc = self.getTOCFrom(toc_text)
 
+        content_diff = abs(toc["content_points"] - content_file_counter)
+        if toc is not None and content_diff>1:
+            logging.info("Discarding TOC due to excessive missing content: %s" % content_diff)
+            toc = None
+
         index = 0
         internalFiles = []
-        for filename in sorted(filenames):
+        for filename in model.sort_nicely(filenames):
             logging.info("Unpacking "+filename)
             file = zippedfile.read(filename)
-            isContentFile = filename.endswith("html") or filename.endswith("xml") and file.find("DOCTYPE html")>0
+            isContentFile = filename.endswith("html") or filename.endswith("xml") and (file.find("<html")>0 or file.find("<HTML")>0)
             if isContentFile:
                 index+=1
             name = filename.rpartition("/")[2] if filename.find("/") else filename
@@ -142,6 +150,9 @@ class Unpacker:
                         epub.date = child.text
                 except Exception, ex:
                     logging.error("Problem with metadata element %s: %s" % (child,ex))
+            spine = root.find(ns+"metadata")
+            for child in spine:
+                pass
             epub.put()
         except Exception, ex:
             logging.error("Metadata error: %s" % ex)
@@ -152,12 +163,15 @@ class Unpacker:
         ns = root.tag[:root.tag.rfind("}")+1] if root.tag.find("{")==0 else root.tag
         title = root.find(ns+"docTitle").find(ns+"text").text
         points = []
+        content_points = 0
         for navPoint in root.iter(ns+"navPoint"):
             points.append({"name" : navPoint.find(ns+"navLabel").find(ns+"text").text,
                            "path" : navPoint.find(ns+"content").attrib["src"],
                            "order" : navPoint.attrib["playOrder"]
                            })
-        return {"title" : title, "points" :points}
+            if points[-1]["path"].endswith("xml") or points[-1]["path"].endswith("html"):
+                content_points+=1
+        return {"title" : title, "points" :points, "content_points" : content_points}
     
     def index_epub(self, epub, index_name, user=None):
         index = search.Index(index_name)

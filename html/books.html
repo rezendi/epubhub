@@ -23,9 +23,6 @@
     <div class="center">
         {% if results %}
             {% for result in results %}
-                {% if result.fourth %}
-                    <div></div>
-                {% endif %}
                 <div class="epub_div">
                     <div id="epub_author">{{result.epub.creator}}</div>
                     <div id="epub_title">{{result.epub.title}}</div>
@@ -44,6 +41,9 @@
                         </UL>
                     </div>
                 </div>
+                {% if result.third %}
+                    <div></div>
+                {% endif %}
             {% endfor %}
         {% else %}
             {% if not public %}

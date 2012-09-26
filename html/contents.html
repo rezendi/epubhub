@@ -3,14 +3,13 @@
 {% block title %}{{title}} Contents{% endblock %}
 
 {% block content %}
-    {% if use_name %}
+    {% if contents %}
         <div id="book_cover">
             <div id="contents_actions" class="middle">
                 <UL class="menubar">
                     <LI><a href='/edit/{{id}}'>About</a></LI>
                     <LI><a href='/manifest?key={{key}}'>Manifest</a></LI>
                     <LI><a href='/download?key={{key}}'>Download</a></LI>
-                    <LI><a href='delete?key={{key}}'>Delete</a></LI>
                 </UL>
                 <form action="/search" method="GET">
                     <input type="hidden" name="book_filter" value="{{key}}"/>
@@ -18,18 +17,18 @@
                     <input type="submit" name="submit" value="Go">
                 </form>
             </div>
-            <img class="epub_cover_thumb" src="/view/{{id}}/{{cover_path}}"/>
+            <img class="epub_cover" src="/view/{{id}}/{{cover_path}}"/>
         </div>
     {% endif %}
     <div id="book_contents">
         <b>{{title}}</b>
-        {% if not use_name %}
+        {% if not contents %}
             <br/>
             This is an unfiltered list of every file within the ePub container.
         {% endif %}
         <OL>
         {% for file in files %}
-            {% if use_name %}
+            {% if contents %}
             <LI><a href='/view/{{id}}/{{file.path}}'>{{file.name}}</a></LI>
             {% else %}
             <LI><a href='/view/{{id}}/{{file.path}}'>{{file.path}}</a></LI>
@@ -39,4 +38,7 @@
     </div>
     <div class="clear"></div>
     <HR/>
+    <div id="epub_description">
+        {{description}}
+    </div>
 {% endblock %}

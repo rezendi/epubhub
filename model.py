@@ -1,4 +1,4 @@
-import json, logging
+import json, logging, re
 from google.appengine.api import datastore_errors
 from google.appengine.ext import blobstore, db
 
@@ -28,7 +28,7 @@ class ePubFile(db.Model):
     internals = InternalFile.all().filter("epub = ", self)
     if (only_chapters):
       internals = internals.filter("order >",0)
-    return internals.order("order")
+    return internals.order("order") if only_chapters else internals.order("path")
   
   def entries(self):
     return LibraryEntry.all().filter("epub = ", self)
@@ -62,7 +62,7 @@ class InternalFile(db.Model):
   data = db.BlobProperty()
 
   def isContentFile(self):
-    return self.path.endswith("html") or self.path.endswith("xml") and self.text.find("DOCTYPE html")>0
+    return self.path.endswith("html") or self.path.endswith("xml") and (self.text.find("<html")>0 or self.text.find("<HTML")>0)
 
 
 class Account(db.Model):
@@ -99,3 +99,11 @@ class PublicRequest(db.Model):
   epub = db.ReferenceProperty(ePubFile)
   user = db.ReferenceProperty(Account)
   supporting_data = db.StringProperty()
+
+#Util methods
+
+def sort_nicely(l):
+    convert = lambda text: int(text) if text.isdigit() else text 
+    alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ] 
+    return sorted(l, key=alphanum_key )
+

@@ -97,7 +97,7 @@ a {
 }
 
 .epub_div {
-  padding:20px;
+  padding:15px;
   width:256px;
   display:inline-block;
   vertical-align:top;
@@ -105,13 +105,14 @@ a {
 
 .epub_cover_thumb {
   padding:20px;
+  max-width:95px;
 }
 
 #epub_title {
   font-weight:bold;
   text-align:center;
-  height:40px;
-  max-height:40px;
+  height:20px;
+  max-height:20px;
 }
 
 #epub_author {
@@ -134,10 +135,21 @@ a {
 
 #book_cover {
   float:right;
+  max-width:60%;
+}
+
+.epub_cover {
+  padding:20px;
+  max-width:90%;
 }
 
 #book_contents {
   float:left;
+  min-width:40%;
+}
+
+.menubar {
+  display:inline-block;
 }
 
 .menubar li {

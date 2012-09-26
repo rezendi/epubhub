@@ -182,7 +182,7 @@ class List(webapp.RequestHandler):
         results = []
         idx = 0
         for epub in epubs:
-            results.append({ 'epub' : epub, 'fourth' : (idx+1)%4==0 })
+            results.append({ 'epub' : epub, 'third' : (idx+1)%3==0 })
             idx+=1
         template_values = {
             "current_user" : get_current_session().get("account"),
@@ -202,8 +202,9 @@ class Manifest(blobstore_handlers.BlobstoreDownloadHandler):
             "current_user" : get_current_session().get("account"),
             "title" : epub.blob.filename,
             "key" : key,
+            "id" : epub.key().id(),
             "files" : epub.internals(),
-            "use_name" : False
+            "contents" : False
         }
         path = os.path.join(os.path.dirname(__file__), 'html/contents.html')
         self.response.out.write(template.render(path, template_values))
@@ -219,8 +220,9 @@ class Contents(blobstore_handlers.BlobstoreDownloadHandler):
             "key" : epub.key(),
             "title" : epub.title,
             "cover_path" : epub.cover_path,
+            "description" : epub.description,
             "files" : epub.internals(only_chapters = True),
-            "use_name" : True
+            "contents" : True
         }
         path = os.path.join(os.path.dirname(__file__), 'html/contents.html')
         self.response.out.write(template.render(path, template_values))
