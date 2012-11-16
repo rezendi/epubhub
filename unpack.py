@@ -57,6 +57,10 @@ class Unpacker:
             if filename.endswith(".opf"):
                 toc = self.parseMetadata(epub, zippedfile.read(filename))
 
+        for filename in sorted(filenames):
+            if filename.endswith(".opf"):
+                toc = self.parseTOC(toc, zippedfile.read(filename))
+
         for filename in model.sort_nicely(filenames):
             file = zippedfile.read(filename)
             isContentFile = filename.endswith("html") or filename.endswith("xml") and (file.find("<html")>0 or file.find("<HTML")>0)
@@ -158,6 +162,9 @@ class Unpacker:
             i+=1
         
         #logging.info("Got toc %s" % toc)
+        return toc
+
+    def parseTOC(self, toc, content):
         return toc
 
     def index_epub(self, epub, index_name, user=None):
