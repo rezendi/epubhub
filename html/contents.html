@@ -31,7 +31,7 @@
             {% if contents %}
             <LI><a href='/view/{{id}}/{{file.path}}'>{{file.name}}</a></LI>
             {% else %}
-            <LI><a href='/view/{{id}}/{{file.path}}'>{{file.path}}</a></LI>
+            <LI>{{file.order}} <a href='/view/{{id}}/{{file.path}}'>{{file.path}}</a></LI>
             {% endif %}
         {% endfor %}
         </OL>

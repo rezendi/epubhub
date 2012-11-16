@@ -58,8 +58,8 @@ class Unpacker:
                 toc = self.parseMetadata(epub, zippedfile.read(filename))
 
         for filename in sorted(filenames):
-            if filename.endswith(".opf"):
-                toc = self.parseTOC(toc, zippedfile.read(filename))
+            if filename.endswith(".ncx"):
+                toc = self.parseTOC(toc, epub, zippedfile.read(filename))
 
         for filename in model.sort_nicely(filenames):
             file = zippedfile.read(filename)
@@ -85,7 +85,7 @@ class Unpacker:
                 text = text,
                 data = data,
                 order = order,
-                name = self.getNameFromFilename(filename)
+                name = name
             )
             internalFile.put()
         
@@ -164,7 +164,28 @@ class Unpacker:
         #logging.info("Got toc %s" % toc)
         return toc
 
-    def parseTOC(self, toc, content):
+    def parseTOC(self, toc, epub, content):
+        to_parse = unicode(content,"utf-8",errors="ignore")
+        to_parse = to_parse.encode("utf-8")
+        root = xml.etree.ElementTree.fromstring(to_parse)
+        ns = root.tag[:root.tag.rfind("}")+1] if root.tag.find("{")==0 else root.tag
+        title = root.find(ns+"docTitle").find(ns+"text").text
+        if title is not None:
+            epub.title = title
+            epub.put()
+            
+        for navPoint in root.iter(ns+"navPoint"):
+            name = navPoint.find(ns+"navLabel").find(ns+"text").text
+            path = navPoint.find(ns+"content").attrib["src"]
+            order = navPoint.attrib["playOrder"]
+            if path is None:
+                continue
+            for key in toc.keys(): # O(n^2) but I think that's OK here
+                dict = toc[key]
+                if dict["filename"].endswith(path):
+                    dict["name"] = name
+                    dict["order"] = int(order) if order is not None else dict["order"]
+                
         return toc
 
     def index_epub(self, epub, index_name, user=None):
@@ -203,19 +224,6 @@ class Unpacker:
         )
         index.add(document)
         
-    def getNextPrevLinks(self, selected):
-        chapter = 0
-        count = 0
-        prev = ""
-        next = ""
-        for idx,internal in enumerate():
-            count+=1
-            if internal==selected:
-                chapter = idx+1
-                prev = points[idx-1].path if idx > 0 else ""
-                next = points[idx+1].path if idx+1 < len(points) else ""
-        return chapter, count, prev, next
-
     def contentHeader(self, internal):
         if internal.data is not None:
             return "image"
@@ -251,8 +259,10 @@ class Unpacker:
         total = epub.internals(only_chapters=True).count()
 
         next_file = epub.internals().filter("order =",selected.order+1).get()
+        next_file = epub.internals().filter("order =",selected.order+2).get() if next_file is None else next_file
         next = next_file.path if next_file is not None else None
         prev_file = epub.internals().filter("order =",selected.order-1).get()
+        prev_file = epub.internals().filter("order =",selected.order-2).get() if prev_file is None else prev_file
         prev = prev_file.path if prev_file is not None else None
         
         html+= '<script>var epub_share="true", epub_title="%s", epub_chapter="%s", epub_total="%s", epub_id="%s", epub_internal="%s", epub_next="%s", epub_prev="%s"</script>\n' % (epub.title, selected.order, total, epub.key().id(), selected.key(), next, prev)
