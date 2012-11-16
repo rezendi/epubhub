@@ -74,10 +74,10 @@ class Unpacker:
                     if filename.endswith(tocName):
                         name = dict["name"] if dict.has_key("name") else self.getNameFromFilename(filename)
                         order = dict["order"] if dict.has_key("order") else -1
-                        logging.info("Unpacking content file %s %s %s %s" % (filename, order, name, dict))
+                        logging.info("Unpacking content file %s" % filename)
             else:
                 name = self.getNameFromFilename(filename)
-                logging.info("Unpacking meta file %s %s %s " % (filename, order, name))
+                logging.info("Unpacking meta file %s " % filename)
 
             internalFile = model.InternalFile(
                 epub = epub,
