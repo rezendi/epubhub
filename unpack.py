@@ -182,7 +182,7 @@ class Unpacker:
                 continue
             for key in toc.keys(): # O(n^2) but I think that's OK here
                 dict = toc[key]
-                if dict["filename"].endswith(path):
+                if dict["filename"].endswith(path) and name is not None:
                     dict["name"] = name
                     #dict["order"] = int(order) if order is not None else dict["order"]
                 
