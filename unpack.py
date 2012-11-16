@@ -184,7 +184,7 @@ class Unpacker:
                 dict = toc[key]
                 if dict["filename"].endswith(path):
                     dict["name"] = name
-                    dict["order"] = int(order) if order is not None else dict["order"]
+                    #dict["order"] = int(order) if order is not None else dict["order"]
                 
         return toc
 
