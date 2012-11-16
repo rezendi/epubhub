@@ -53,48 +53,27 @@ class Unpacker:
         for filename in zippedfile.namelist():
             filenames.append(filename)
         
-        content_file_counter = 0
         for filename in sorted(filenames):
-            if filename.endswith(".xml") or filename.endswith("html"):
-                content_file_counter+=1
-            elif filename.endswith(".opf"):
-                self.parseMetadata(epub, zippedfile.read(filename))
-            elif filename.endswith(".ncx"):
-                toc_text = db.Text(zippedfile.read(filename), encoding="utf-8")
-                toc = self.getTOCFrom(toc_text)
+            if filename.endswith(".opf"):
+                toc = self.parseMetadata(epub, zippedfile.read(filename))
 
-        content_diff = abs(toc["content_points"] - content_file_counter)
-        if toc is not None and content_diff>1:
-            logging.info("Discarding TOC due to excessive missing content: %s" % content_diff)
-            toc = None
-
-        index = 0
-        internalFiles = []
         for filename in model.sort_nicely(filenames):
-            logging.info("Unpacking "+filename)
             file = zippedfile.read(filename)
             isContentFile = filename.endswith("html") or filename.endswith("xml") and (file.find("<html")>0 or file.find("<HTML")>0)
+            [text, data] = self.getTextOrData(file)
+            order = -1
+
             if isContentFile:
-                index+=1
-            name = filename.rpartition("/")[2] if filename.find("/") else filename
-            name = name.replace(".html","").replace(".htm","").replace(".xml","")
-            name = name.rpartition(".")[0] if name.find(".")>0 else name
-            name = "..." if len(name)==0 else name
-            data = None
-            try:
-                text = db.Text(file, encoding="utf-8")
-                order = index if isContentFile else 0
-                if toc is not None:
-                    order = index if isContentFile else 0
-                    for point in toc["points"]:
-                        path = urllib.unquote_plus(point["path"])
-                        if filename.endswith(path):
-                            if point["name"] is not None and len(point["name"])>0:
-                                name = point["name"]
-                            order = int(point["order"]) if int(point["order"])>0 else index
-            except Exception, ex:
-                order = 0
-                data = db.Blob(file)
+                for key in toc.keys(): # O(n^2) but I think that's OK here
+                    dict = toc[key]
+                    tocName = dict["filename"].replace("%20"," ")
+                    if filename.endswith(tocName):
+                        name = dict["name"] if dict.has_key("name") else self.getNameFromFilename(filename)
+                        order = dict["order"] if dict.has_key("order") else -1
+                        logging.info("Unpacking content file %s %s %s %s" % (filename, order, name, dict))
+            else:
+                name = self.getNameFromFilename(filename)
+                logging.info("Unpacking meta file %s %s %s " % (filename, order, name))
 
             internalFile = model.InternalFile(
                 epub = epub,
@@ -102,21 +81,29 @@ class Unpacker:
                 text = text,
                 data = data,
                 order = order,
-                name = name
+                name = self.getNameFromFilename(filename)
             )
-            internalFiles.append(internalFile)
+            internalFile.put()
         
-        logging.info("Ordering %s files" % len(internalFiles))
-        count = 0
-        for internal in sorted(internalFiles, key = lambda file:file.order):
-            if internal.order > 0:
-                count+=1
-                internal.order = count
-            internal.put()
-        logging.info("Ordered %s content files" % count)
-            
+    def getTextOrData(self, file):
+        try:
+            text = db.Text(file, encoding="utf-8")
+            return [text, None]
+        except Exception, ex:
+            order = 0
+            data = db.Blob(file)
+            return [None, data]
+
+    def getNameFromFilename(self, filename):
+        name = filename.rpartition("/")[2] if filename.find("/") else filename
+        name = name.replace(".html","").replace(".htm","").replace(".xml","")
+        name = name.rpartition(".")[0] if name.find(".")>0 else name
+        name = "..." if len(name)==0 else name
+        return name
+
     def parseMetadata(self, epub, content):
         try:
+            logging.info("Parsing metadata")
             to_parse = unicode(content,"utf-8",errors="ignore")
             to_parse = to_parse.encode("utf-8")
             root = xml.etree.ElementTree.fromstring(to_parse)
@@ -150,29 +137,29 @@ class Unpacker:
                         epub.date = child.text
                 except Exception, ex:
                     logging.error("Problem with metadata element %s: %s" % (child,ex))
-            spine = root.find(ns+"metadata")
-            for child in spine:
-                pass
             epub.put()
+        
         except Exception, ex:
             logging.error("Metadata error: %s" % ex)
             epub.creator = "Metadata error"
+
+        toc = {}
+        manifest = root.find(ns+"manifest")
+        for child in manifest:
+            id = child.attrib["id"]
+            toc[id] = {}
+            toc[id]["filename"] = child.attrib["href"]
+
+        spine = root.find(ns+"spine")
+        i=0
+        for child in spine:
+            idref = child.attrib["idref"]
+            toc[idref]["order"] = i
+            i+=1
         
-    def getTOCFrom(self, content):
-        root = xml.etree.ElementTree.fromstring(content.encode("utf-8"))
-        ns = root.tag[:root.tag.rfind("}")+1] if root.tag.find("{")==0 else root.tag
-        title = root.find(ns+"docTitle").find(ns+"text").text
-        points = []
-        content_points = 0
-        for navPoint in root.iter(ns+"navPoint"):
-            points.append({"name" : navPoint.find(ns+"navLabel").find(ns+"text").text,
-                           "path" : navPoint.find(ns+"content").attrib["src"],
-                           "order" : navPoint.attrib["playOrder"]
-                           })
-            if points[-1]["path"].endswith("xml") or points[-1]["path"].endswith("html"):
-                content_points+=1
-        return {"title" : title, "points" :points, "content_points" : content_points}
-    
+        #logging.info("Got toc %s" % toc)
+        return toc
+
     def index_epub(self, epub, index_name, user=None):
         index = search.Index(index_name)
         for internal in epub.internals():

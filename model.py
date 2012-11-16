@@ -27,7 +27,7 @@ class ePubFile(db.Model):
   def internals(self, only_chapters = False):
     internals = InternalFile.all().filter("epub = ", self)
     if (only_chapters):
-      internals = internals.filter("order >",0)
+      internals = internals.filter("order >",-1)
     return internals.order("order") if only_chapters else internals.order("path")
   
   def entries(self):

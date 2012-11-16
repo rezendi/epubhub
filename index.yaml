@@ -24,6 +24,12 @@ indexes:
 - kind: InternalFile
   properties:
   - name: epub
+  - name: order
+  - name: path
+
+- kind: InternalFile
+  properties:
+  - name: epub
   - name: path
 
 - kind: InternalFile
