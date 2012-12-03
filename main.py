@@ -1,4 +1,4 @@
-import json, logging, urllib, os, re, zipfile
+import json, logging, urllib, os, random, re, zipfile
 from google.appengine.api import search, taskqueue, users
 from google.appengine.ext import blobstore, db, webapp
 from google.appengine.ext.webapp import blobstore_handlers, template
@@ -70,8 +70,20 @@ class Main(webapp.RequestHandler):
         account_key = session.get("account")
         account = None if account_key is None else db.get(account_key)
         if account is None:
+            epubs = model.ePubFile.all().filter("license IN",["Public Domain","Creative Commons"])
+            show = []
+            for epub in epubs:
+                if random.randint(0,1)==1:
+                    show.append(epub)
+                if len(show)==3:
+                    break
+            for epub in epubs:
+                if len(show)==3:
+                    break
+                if random.randint(0,1)==1:
+                    show.append(epub)
             template_values = {
-                "epubs" : model.ePubFile.all().filter("license IN",["Public Domain","Creative Commons"]).fetch(3),
+                "epubs" : show,
                 "current_user" : get_current_session().get("account"),
                 "login_url" : users.create_login_url("/")
             }

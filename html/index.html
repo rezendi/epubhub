@@ -11,9 +11,11 @@
     </div>
 
     <div class="mid50">
-        <div class="auth"><a class="btn-auth btn-facebook" href="/auth/facebook">Sign in with <b>Facebook</b></a></div>
-        <div class="auth"><a class="btn-auth btn-google" href="{{login_url}}">Sign in with <b>Google</b></a></div>
-        <div class="auth"><a class="btn-auth btn-twitter" href="/auth/twitter">Sign in with <b>Twitter</b></a></div>
+        <br/>
+        <span class="auth"><a class="btn-auth btn-facebook" href="/auth/facebook">Sign in with <b>Facebook</b></a></span>
+        <span class="auth"><a class="btn-auth btn-google" href="{{login_url}}">Sign in with <b>Google</b></a></span>
+        <span class="auth"><a class="btn-auth btn-twitter" href="/auth/twitter">Sign in with <b>Twitter</b></a></span>
+        <p/>
         <hr/>
         <form action="/search" method="GET">
             <input class="input_field" type="search" name="q" placeholder="Search"/>
@@ -26,6 +28,28 @@
         </form>
         <br/>
         <hr/>
+    </div>
+    <div class="center">
+    {% for epub in epubs %}
+        <div class="epub_div">
+            <div id="epub_author">{{epub.creator}}</div>
+            <div id="epub_title">{{epub.title}}</div>
+            <div class="epub_left">
+                <a href='/book/{{epub.key.id}}'>
+                    <img class="epub_cover_thumb" src="/view/{{epub.key.id}}/{{epub.cover_path}}" height="100"/>
+                </a>
+            </div>
+            <div class="epub_right">
+                {% if show = "public" %}<BR/>{% endif %}
+                <UL>
+                    <LI><a href='/edit/{{epub.key.id}}'>About</a></LI>
+                    <LI><a href='/book/{{epub.key.id}}'>Contents</a></LI>
+                    <LI><a href='/manifest?key={{epub.key}}'>Manifest</a></LI>
+                    <LI><a href='/download?key={{epub.key}}'>Download</a></LI>
+                </UL>
+            </div>
+        </div>
+    {% endfor %}
     </div>
 
 {% endblock %}
