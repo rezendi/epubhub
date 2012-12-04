@@ -1,5 +1,5 @@
 About/FAQ.
-Use manifest spine, re-unpack task.
+Fix search snippets.
 
 Eventually:
  Share quote & comment to FB/Twitter.

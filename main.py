@@ -150,6 +150,9 @@ class UnpackInternal(webapp.RequestHandler):
 
 class Index(webapp.RequestHandler):
     def get(self):
+        if not users.is_current_user_admin():
+            self.response.out.write("No")
+            return
         return self.post()
 
     def post(self):
@@ -267,11 +270,12 @@ class Search(webapp.RequestHandler):
 
     def post(self):
         try:
+            q = self.request.get('q')
             include = self.request.get('include')
-            query = "(name:%s OR html:%s)" % (self.request.get('q'), self.request.get('q'))
+            logging.info("Searching for "+q)
+            query = "(name:%s OR html:%s)" % (q,q)
             book = self.request.get('book_filter')
             query = "book:%s AND %s" % (book, query) if book is not None and len(book.strip())>0 else query
-            logging.info("Search query "+query)
             sort_opts = search.SortOptions(match_scorer=search.MatchScorer())
             opts = search.QueryOptions(limit = 100, snippeted_fields = ['html'], sort_options = sort_opts)
             results = []
@@ -287,7 +291,8 @@ class Search(webapp.RequestHandler):
                 for doc in search_results:
                     internal = db.get(doc.doc_id)
                     if internal is not None:
-                        index_results.append({ "doc" : doc, "internal" : internal })
+                        logging.info("Got expressions %s" % doc.expressions)
+                        index_results.append({ "snippets" : doc.expressions, "internal" : internal })
                 results.append({'count' : search_results.number_found, 'results' : index_results, 'show' : True})
     
             template_values = {
@@ -486,7 +491,7 @@ class Clear(webapp.RequestHandler):
         if not users.is_current_user_admin():
             self.response.out.write("No")
             return
-        for indexName in ["chapters"]: #["private","public","chapters"]:
+        for indexName in ["private","public","chapters"]:
             index = search.Index(indexName)
             for doc in index.list_documents(limit=1000, ids_only=True):
                 index.remove(doc.doc_id)

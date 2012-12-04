@@ -10,8 +10,8 @@
             {% for result in private_results %}
                 <LI>{{result.internal.epub.title}}:
                 <a href='/view/{{result.internal.epub.key.id}}/{{result.internal.path}}'>{{result.internal.name}}</a>
-                {% for expression in result.doc.expressions %}
-                    <div class="search_snippet">{{expression.value|safe}}</div>
+                {% for snippet in result.snippets %}
+                    <div class="search_snippet">{{snippet.value|safe}}</div>
                 {% endfor %}
             {% endfor %}
             </OL>
@@ -24,8 +24,8 @@
             {% for result in public_results %}
                 <LI>{{result.internal.epub.title}}:
                 <a href='/view/{{result.internal.epub.key.id}}/{{result.internal.path}}'>{{result.internal.name}}</a>
-                {% for expression in result.doc.expressions %}
-                    <div class="search_snippet">{{expression.value|safe}}</div>
+                {% for snippet in result.snippets %}
+                    <div class="search_snippet">{{snippet.value|safe}}</div>
                 {% endfor %}
             {% endfor %}
             </OL>
