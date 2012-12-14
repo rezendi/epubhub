@@ -11,8 +11,5 @@ handlers:
 - url: /auth.*
   script: auth.app
 
-- url: /guide.*
-  script: guide.app
-
 - url: .*
   script: main.app
