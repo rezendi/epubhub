@@ -67,7 +67,7 @@ class RegisterFacebook(webapp.RequestHandler):
     def get(self):
         args = dict(client_id=FACEBOOK_APP_ID,
                     redirect_uri="http://www.epubhost.com/auth/facebook/callback",
-                    scope="email,user_about_me,user_education_history,user_interests,user_likes")
+                    scope="email")
         self.redirect( "https://graph.facebook.com/oauth/authorize?" + urllib.urlencode(args))
 
 class FacebookCallback(webapp.RequestHandler):
