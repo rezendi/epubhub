@@ -1,5 +1,4 @@
 About/FAQ.
-Fix search snippets.
 
 Eventually:
  Share quote & comment to FB/Twitter.
