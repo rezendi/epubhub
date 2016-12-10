@@ -5,10 +5,10 @@ from gaesessions import get_current_session
 import tweepy
 import model
 
-TWITTER_CONSUMER_KEY    = "FEcBCnl9EegBp63AHnfyQA"
-TWITTER_CONSUMER_SECRET = "XvVir9WQqHpo1WnN1nIx8Bdc4FnlexzZ9lUAuPPHnzs"
-FACEBOOK_APP_ID         = "492168570793246"
-FACEBOOK_SECRET         = "2a66e1b04a737f46a265826885e1a5e7"
+TWITTER_CONSUMER_KEY    = "YOUR_TWITTER_KEY"
+TWITTER_CONSUMER_SECRET = "YOUR_TWITTER_SECRET"
+FACEBOOK_APP_ID         = "YOUR_FB_APP_ID"
+FACEBOOK_SECRET         = "YOUR_FB_SECRET"
 
 #OAuth registration
 class RegisterTwitter(webapp.RequestHandler):
